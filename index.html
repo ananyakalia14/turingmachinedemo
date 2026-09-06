@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universal Computation Unit — AI-Inspired Universal Turing Machine Simulator</title>
+  <meta name="description" content="Academic demonstration for 3rd-year Computer Engineering: AI-Inspired Computation Using the Universal Turing Machine Model. One machine, different encoded programs, different computations.">
+  
+  <!-- Academic Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Academic Lab Banner / Metadata -->
+  <header class="lab-header" id="labHeader">
+    <div class="header-top">
+      <div class="lab-badge">
+        <span class="pulse-dot"></span>
+        <span>LABORATORY APPARATUS // COMP-ENG 301</span>
+      </div>
+      <div class="persistent-notice" id="persistentNotice">
+        Demonstration of Universal Computation — Educational Model
+      </div>
+      <div class="header-actions">
+        <button id="demoSequenceBtn" class="btn btn-primary btn-sm" title="Launch Guided 3-Phase University Examination Demo">
+          <span class="icon">&#9654;</span> DEMO SEQUENCE
+        </button>
+        <button id="presenterCuesToggleBtn" class="btn btn-secondary btn-sm" title="Toggle Rehearsal Speaking Cues (Hidden by default)">
+          <span class="icon">&#128172;</span> PRESENTER CUES
+        </button>
+        <button id="utmModeBtn" class="btn btn-secondary btn-sm" title="Toggle Universal Interpreter Architecture Mode">
+          <span class="icon">&xne;</span> UNIVERSAL MODE
+        </button>
+        <button id="presentationModeBtn" class="btn btn-secondary btn-sm" title="Optimize view for screen sharing & projector">
+          <span class="icon">&#9974;</span> PRESENTATION MODE
+        </button>
+      </div>
+    </div>
+    
+    <div class="header-main">
+      <div class="title-group">
+        <h1 class="system-title">UNIVERSAL COMPUTATION UNIT</h1>
+        <p class="system-subtitle">One machine. Different programs. Different computations.</p>
+      </div>
+      
+      <!-- Invariant Hardware & Dynamic Program Badges -->
+      <div class="hardware-status-strip">
+        <div class="status-chip machine-invariant" id="chipHardware">
+          <span class="chip-label">HARDWARE STATUS:</span>
+          <span class="chip-val">[MACHINE HARDWARE: UNCHANGED]</span>
+        </div>
+        <div class="status-chip program-loaded" id="chipProgram">
+          <span class="chip-label">MEMORY STATUS:</span>
+          <span class="chip-val" id="loadedProgBadge">[PROGRAM MEMORY: LOADED]</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid Container -->
+  <main class="lab-workspace" id="labWorkspace">
+    
+    <!-- TOP ROW: PROGRAM MEMORY -->
+    <section class="panel program-memory-panel" id="programMemoryPanel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <span class="panel-tag">SECTION 01</span>
+          <h2 class="panel-title">PROGRAM MEMORY (ENCODED INSTRUCTIONS AS DATA)</h2>
+        </div>
+        <span class="panel-meta">PROGRAM AS DATA // NON-HARDWIRED // VARIABLE</span>
+      </div>
+
+      <div class="program-cards-grid">
+        <!-- PROGRAM A -->
+        <div class="program-card active" id="progCardA" data-prog="A">
+          <div class="card-header">
+            <span class="prog-badge">PROGRAM A</span>
+            <span class="prog-name">SYMBOL SHIFT</span>
+          </div>
+          <p class="prog-desc">Data movement: shifts binary word right with carry propagation via internal states.</p>
+          <div class="encoded-box">
+            <div class="enc-header-row">
+              <span class="enc-label">ENCODED PROCEDURE &lang;M<sub>A</sub>&rang;:</span>
+              <span class="enc-subtag">STORED AS DATA</span>
+            </div>
+            <div class="enc-code-lines" id="encCodeLinesA">
+              <div class="code-line">&delta;(q0, 0) &rarr; (qC0, 0, R)</div>
+              <div class="code-line">&delta;(q0, 1) &rarr; (qC1, 0, R)</div>
+              <div class="code-line">&delta;(qC0, 0) &rarr; (qC0, 0, R) | &delta;(qC1, 1) &rarr; (qC1, 1, R)</div>
+              <div class="code-line">&delta;(qC1, &square;) &rarr; (qRew, 1, L) &rarr; qHalt</div>
+            </div>
+          </div>
+          <div class="prog-action">
+            <button class="btn btn-select" id="selectProgABtn">LOAD INTO MACHINE</button>
+          </div>
+        </div>
+
+        <!-- PROGRAM B -->
+        <div class="program-card" id="progCardB" data-prog="B">
+          <div class="card-header">
+            <span class="prog-badge">PROGRAM B</span>
+            <span class="prog-name">XOR TRANSFORM</span>
+          </div>
+          <p class="prog-desc">Educational cryptographic transformation: bit-by-bit XOR with key via tape traversal.</p>
+          <div class="encoded-box">
+            <div class="enc-header-row">
+              <span class="enc-label">ENCODED PROCEDURE &lang;M<sub>B</sub>&rang;:</span>
+              <span class="enc-subtag">STORED AS DATA</span>
+            </div>
+            <div class="enc-code-lines" id="encCodeLinesB">
+              <div class="code-line">&delta;(q0, 0) &rarr; (qSeekK0, X, R) | &delta;(q0, 1) &rarr; (qSeekK1, Y, R)</div>
+              <div class="code-line">&delta;(qAtKey0, 0) &rarr; (qSeekOut0, X, R)  [0 &oplus; 0 = 0]</div>
+              <div class="code-line">&delta;(qAtKey1, 1) &rarr; (qSeekOut0, Y, R)  [1 &oplus; 1 = 0]</div>
+              <div class="code-line">&delta;(qAtKey1, 0) &rarr; (qSeekOut1, X, R)  [1 &oplus; 0 = 1]</div>
+            </div>
+          </div>
+          <div class="prog-action">
+            <button class="btn btn-select" id="selectProgBBtn">LOAD INTO MACHINE</button>
+          </div>
+        </div>
+
+        <!-- PROGRAM C -->
+        <div class="program-card" id="progCardC" data-prog="C">
+          <div class="card-header">
+            <span class="prog-badge">PROGRAM C</span>
+            <span class="prog-name">BIT PATTERN &amp; PARITY</span>
+          </div>
+          <p class="prog-desc">Logical inversion &amp; verification: bitwise NOT + parity synthesis at boundary.</p>
+          <div class="encoded-box">
+            <div class="enc-header-row">
+              <span class="enc-label">ENCODED PROCEDURE &lang;M<sub>C</sub>&rang;:</span>
+              <span class="enc-subtag">STORED AS DATA</span>
+            </div>
+            <div class="enc-code-lines" id="encCodeLinesC">
+              <div class="code-line">&delta;(q0, 0) &rarr; (qOdd, 1, R)   [NOT: 0 &rarr; 1, Parity Odd]</div>
+              <div class="code-line">&delta;(q0, 1) &rarr; (qEven, 0, R)  [NOT: 1 &rarr; 0, Parity Even]</div>
+              <div class="code-line">&delta;(qEven, &square;) &rarr; (qWPE, #, R) [Synthesize Parity Bit 0]</div>
+              <div class="code-line">&delta;(qOdd, &square;) &rarr; (qWPO, #, R)  [Synthesize Parity Bit 1]</div>
+            </div>
+          </div>
+          <div class="prog-action">
+            <button class="btn btn-select" id="selectProgCBtn">LOAD INTO MACHINE</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRAM CONFIGURATION / CRYPTOGRAPHIC INTERACTIVE STRIP (For Program B) -->
+      <div class="crypto-config-strip" id="cryptoConfigStrip" style="display: none;">
+        <div class="crypto-notice">
+          <strong>EDUCATIONAL CRYPTOGRAPHIC TRANSFORMATION</strong>
+          <span>(Bitwise XOR implemented via formal Turing tape operations &mdash; not modern production encryption)</span>
+        </div>
+        <div class="crypto-inputs">
+          <div class="input-field-group">
+            <label for="cryptoInputBits">BINARY INPUT (P):</label>
+            <input type="text" id="cryptoInputBits" value="101101" maxlength="8" spellcheck="false" autocomplete="off">
+          </div>
+          <div class="crypto-op-sign">&oplus;</div>
+          <div class="input-field-group">
+            <label for="cryptoKeyBits">BINARY KEY (K):</label>
+            <input type="text" id="cryptoKeyBits" value="110011" maxlength="8" spellcheck="false" autocomplete="off">
+          </div>
+          <div class="crypto-op-sign">=</div>
+          <div class="crypto-expected">
+            <label>PREDICTED OUTPUT:</label>
+            <span class="expected-val" id="cryptoExpectedVal">011110</span>
+          </div>
+          <button id="applyCryptoBtn" class="btn btn-secondary btn-sm">RE-ENCODE TO TAPE</button>
+        </div>
+      </div>
+
+      <!-- GENERAL INPUT EDITOR (For Programs A & C) -->
+      <div class="general-config-strip" id="generalConfigStrip">
+        <div class="config-inner">
+          <div class="input-field-group">
+            <label for="customTapeInput">TAPE INPUT STRING (0s &amp; 1s):</label>
+            <input type="text" id="customTapeInput" value="101101" maxlength="12" spellcheck="false" autocomplete="off">
+          </div>
+          <button id="applyCustomInputBtn" class="btn btn-secondary btn-sm">SET TAPE INPUT</button>
+          <span class="config-tip">Educational procedures created for demonstration &mdash; not historically fixed UTM programs.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEDICATED VISUAL SECTION: SAME MACHINE — DIFFERENT COMPUTATIONS -->
+    <section class="panel same-machine-panel" id="sameMachinePanel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <span class="panel-tag">THEORETICAL CORE</span>
+          <h2 class="panel-title">SAME MACHINE &mdash; DIFFERENT COMPUTATIONS</h2>
+        </div>
+        <div class="invariance-badges-pair">
+          <span class="badge-lock" id="badgeHardwareLock">[MACHINE HARDWARE: UNCHANGED]</span>
+          <span class="badge-swap" id="badgeProgramSwap">[PROGRAM MEMORY: LOADED]</span>
+        </div>
+      </div>
+      
+      <div class="same-machine-visual">
+        <!-- Visual Circuit / Data Flow Junction -->
+        <div class="circuit-routing">
+          <div class="circuit-col circuit-inputs">
+            <div class="circuit-node-title">ENCODED PROCEDURES (DATA)</div>
+            <div class="prog-flow-node" id="circuitNodeA">
+              <span class="node-tag">PROGRAM A</span>
+              <span class="node-name">SYMBOL SHIFT</span>
+              <code class="node-enc">&lang;M<sub>A</sub>&rang;</code>
+            </div>
+            <div class="prog-flow-node" id="circuitNodeB">
+              <span class="node-tag">PROGRAM B</span>
+              <span class="node-name">XOR TRANSFORM</span>
+              <code class="node-enc">&lang;M<sub>B</sub>&rang;</code>
+            </div>
+            <div class="prog-flow-node" id="circuitNodeC">
+              <span class="node-tag">PROGRAM C</span>
+              <span class="node-name">BIT PATTERN</span>
+              <code class="node-enc">&lang;M<sub>C</sub>&rang;</code>
+            </div>
+          </div>
+
+          <div class="circuit-col circuit-buses">
+            <div class="bus-branch bus-a">─────┐</div>
+            <div class="bus-branch bus-b">─────┼──►</div>
+            <div class="bus-branch bus-c">─────┘</div>
+          </div>
+
+          <div class="circuit-col circuit-machine-monolith">
+            <div class="monolith-box">
+              <div class="monolith-badge">&check; IDENTICAL PHYSICAL UNIT</div>
+              <div class="monolith-core-name">UNIVERSAL MACHINE &Uscr;</div>
+              <div class="monolith-specs">Infinite Discrete Tape &bull; Physical Head &bull; State Registers</div>
+              <div class="monolith-law">THE MACHINE NEVER CHANGES</div>
+            </div>
+          </div>
+
+          <div class="circuit-col circuit-buses">
+            <div class="bus-branch bus-out">──────►</div>
+          </div>
+
+          <div class="circuit-col circuit-outputs">
+            <div class="circuit-node-title">DIFFERENT COMPUTATIONS</div>
+            <div class="out-flow-node" id="circuitOutNodeA">
+              <span class="node-tag">OUTPUT A</span>
+              <code class="node-res" id="circuitResA">Pending</code>
+            </div>
+            <div class="out-flow-node" id="circuitOutNodeB">
+              <span class="node-tag">OUTPUT B</span>
+              <code class="node-res" id="circuitResB">Pending</code>
+            </div>
+            <div class="out-flow-node" id="circuitOutNodeC">
+              <span class="node-tag">OUTPUT C</span>
+              <code class="node-res" id="circuitResC">Pending</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foundational Mathematical Identity -->
+        <div class="utm-math-banner">
+          <div class="math-banner-item">
+            <span class="math-label">THEORETICAL FOUNDATION:</span>
+            <span class="math-eq">&Uscr;(&lang;M&rang;, w) = M(w)</span>
+          </div>
+          <div class="math-banner-item">
+            <span class="math-label">UNIVERSAL PRINCIPLE:</span>
+            <span class="math-text">Encoded Program &lang;M&rang; + Input w &xrarr; [ Universal Machine &Uscr; ] &xrarr; Computed Result M(w)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MIDDLE: THE PHYSICAL UNIVERSAL MACHINE CORE (INVARIANT) -->
+    <section class="panel machine-core-panel" id="machineCorePanel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <span class="panel-tag">SECTION 02</span>
+          <h2 class="panel-title">UNIVERSAL COMPUTATION ENGINE (INVARIANT HARDWARE)</h2>
+        </div>
+        <div class="engine-specs">
+          <span class="spec-item">TAPE: &infin; DISCRETE CELLS</span>
+          <span class="spec-item">ALPHABET &Gamma;: {0, 1, #, X, Y, &square;}</span>
+          <span class="spec-item">DETERMINISTIC: 100%</span>
+        </div>
+      </div>
+
+      <!-- TAPE APPARATUS -->
+      <div class="tape-apparatus-container" id="tapeApparatus">
+        <div class="tape-ruler">
+          <span class="ruler-label">TAPE POSITION INDEX</span>
+          <div class="head-tracking-banner" id="headCoord">HEAD CELL: #0</div>
+        </div>
+
+        <!-- Physical Head Pointer Assembly -->
+        <div class="head-assembly-viewport">
+          <div class="head-assembly" id="headAssembly">
+            <div class="head-sensor">
+              <span class="sensor-tag">HEAD</span>
+              <span class="sensor-state" id="headStateLabel">q0</span>
+            </div>
+            <div class="head-bracket">&#8595;</div>
+          </div>
+        </div>
+
+        <!-- Scrollable Physical Tape Strip -->
+        <div class="tape-viewport" id="tapeViewport">
+          <div class="tape-track" id="tapeTrack">
+            <!-- Dynamically populated tape cells -->
+          </div>
+        </div>
+      </div>
+
+      <!-- MACHINE STATE READOUT & ACTIVE TRANSITION RULE -->
+      <div class="telemetry-grid">
+        <!-- Live State Registers -->
+        <div class="telemetry-card state-card">
+          <div class="card-subtitle">INTERNAL STATE REGISTERS</div>
+          <div class="registers-grid">
+            <div class="reg-box">
+              <span class="reg-label">CURRENT STATE</span>
+              <span class="reg-value" id="regCurrentState">q0</span>
+            </div>
+            <div class="reg-box">
+              <span class="reg-label">READ SYMBOL</span>
+              <span class="reg-value" id="regReadSymbol">1</span>
+            </div>
+            <div class="reg-box">
+              <span class="reg-label">WRITE SYMBOL</span>
+              <span class="reg-value" id="regWriteSymbol">&mdash;</span>
+            </div>
+            <div class="reg-box">
+              <span class="reg-label">HEAD MOVE</span>
+              <span class="reg-value" id="regHeadMove">&mdash;</span>
+            </div>
+            <div class="reg-box">
+              <span class="reg-label">NEXT STATE</span>
+              <span class="reg-value" id="regNextState">&mdash;</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Transition Rule Display -->
+        <div class="telemetry-card rule-card">
+          <div class="card-subtitle">ACTIVE TRANSITION RULE &delta;(q, &sigma;)</div>
+          <div class="active-rule-box" id="activeRuleBox">
+            <span class="math-rule" id="activeRuleDisplay">&delta;(q0, 1) &rarr; (q1, 0, R)</span>
+          </div>
+          <div class="rule-status-bar">
+            <span class="rule-tag" id="ruleActionDesc">Awaiting instruction execution</span>
+          </div>
+        </div>
+
+        <!-- Cycle & Performance Counter -->
+        <div class="telemetry-card metrics-card">
+          <div class="card-subtitle">COMPUTATION METRICS</div>
+          <div class="metrics-grid">
+            <div class="metric-item">
+              <span class="m-label">STEP COUNTER</span>
+              <span class="m-val" id="metricSteps">0</span>
+            </div>
+            <div class="metric-item">
+              <span class="m-label">CELL TRANSITIONS</span>
+              <span class="m-val" id="metricTransitions">0</span>
+            </div>
+            <div class="metric-item">
+              <span class="m-label">MACHINE STATUS</span>
+              <span class="m-val status-ready" id="metricStatus">READY</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MECHANICAL CONTROLS -->
+      <div class="control-bar">
+        <div class="control-buttons">
+          <button id="btnStep" class="btn btn-primary btn-control" title="Execute single transition step">
+            <span class="btn-icon">&#9654;&#10073;</span> STEP
+          </button>
+          <button id="btnRun" class="btn btn-success btn-control" title="Run continuous transitions">
+            <span class="btn-icon">&#9654;</span> RUN
+          </button>
+          <button id="btnPause" class="btn btn-warning btn-control" disabled title="Pause computation">
+            <span class="btn-icon">&#10073;&#10073;</span> PAUSE
+          </button>
+          <button id="btnReset" class="btn btn-danger btn-control" title="Reset tape and state to origin">
+            <span class="btn-icon">&#8635;</span> RESET
+          </button>
+        </div>
+
+        <div class="speed-control">
+          <label for="simSpeed">CLOCK SPEED:</label>
+          <input type="range" id="simSpeed" min="50" max="800" step="50" value="300">
+          <span class="speed-indicator" id="speedLabel">1.0&times;</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOTTOM ROW: EXPLANATION LOG & EQUIVALENCE PROOF -->
+    <div class="bottom-layout-grid">
+      
+      <!-- STEP-BY-STEP "WHAT JUST HAPPENED?" EXPLANATION -->
+      <section class="panel explanation-panel" id="explanationPanel">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="panel-tag">SECTION 03</span>
+            <h2 class="panel-title">WHAT JUST HAPPENED? (STEP TELEMETRY)</h2>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="clearLogBtn">CLEAR LOG</button>
+        </div>
+        
+        <div class="current-step-callout" id="currentStepCallout">
+          <span class="callout-badge">LATEST STEP:</span>
+          <p class="callout-text" id="latestStepText">System initialized in state q0. Awaiting first clock pulse.</p>
+        </div>
+
+        <div class="history-log-viewport" id="historyLogViewport">
+          <table class="history-table" id="historyTable">
+            <thead>
+              <tr>
+                <th>STEP</th>
+                <th>STATE</th>
+                <th>READ</th>
+                <th>TRANSITION RULE</th>
+                <th>ACTION SUMMARY</th>
+              </tr>
+            </thead>
+            <tbody id="historyLogBody">
+              <!-- Dynamically populated transition history -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- EXPERIMENT LOG / COMPARE RUNS (AUTOMATICALLY UPDATING) -->
+      <section class="panel experiment-log-panel" id="experimentLogPanel">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="panel-tag">SECTION 04</span>
+            <h2 class="panel-title">EXPERIMENT LOG (COMPARE RUNS)</h2>
+          </div>
+          <span class="invariance-badge">MACHINE CONFIGURATION: IDENTICAL</span>
+        </div>
+
+        <div class="experiment-log-card">
+          <table class="experiment-table">
+            <thead>
+              <tr>
+                <th>RUN #</th>
+                <th>ENCODED PROGRAM</th>
+                <th>PROCEDURE TYPE</th>
+                <th>OUTPUT RESULT</th>
+                <th>HARDWARE CONFIG</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="expRowA">
+                <td><span class="run-id">Run 01</span></td>
+                <td><strong>Program A</strong> (Shift)</td>
+                <td>Data Movement (Shift Right)</td>
+                <td><code class="exp-out" id="expOutA">Pending...</code></td>
+                <td><span class="tag-invariant">&check; SAME (UNCHANGED)</span></td>
+              </tr>
+              <tr id="expRowB">
+                <td><span class="run-id">Run 02</span></td>
+                <td><strong>Program B</strong> (XOR)</td>
+                <td>Educational Cryptographic XOR</td>
+                <td><code class="exp-out" id="expOutB">Pending...</code></td>
+                <td><span class="tag-invariant">&check; SAME (UNCHANGED)</span></td>
+              </tr>
+              <tr id="expRowC">
+                <td><span class="run-id">Run 03</span></td>
+                <td><strong>Program C</strong> (Pattern)</td>
+                <td>Bit Inversion &amp; Parity Synthesis</td>
+                <td><code class="exp-out" id="expOutC">Pending...</code></td>
+                <td><span class="tag-invariant">&check; SAME (UNCHANGED)</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="experiment-footer-note">
+            <strong>Key Invariance Law:</strong> The machine hardware configuration is verified 100% IDENTICAL across all runs. Behavioral divergence arises solely from variable instruction data loaded into memory.
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- DRAMATIC ACADEMIC PAUSE BANNER / MODAL (TRIGGERED DURING DEMO SEQUENCE) -->
+  <div class="academic-pause-backdrop" id="academicPauseOverlay" style="display: none;">
+    <div class="academic-pause-card">
+      <div class="pause-header-badge">UNIVERSITY EXAMINATION DEMONSTRATION // CONCEPTUAL PAUSE</div>
+      <div class="pause-callout-main" id="pauseCalloutMain">&ldquo;NOW CHANGE ONLY THE PROGRAM.&rdquo;</div>
+      <div class="pause-callout-sub" id="pauseCalloutSub">&ldquo;THE MACHINE DID NOT CHANGE. ONLY THE ENCODED PROGRAM CHANGED.&rdquo;</div>
+      
+      <div class="pause-status-row">
+        <div class="pause-chip chip-fixed">
+          <span class="chip-legend">MACHINE HARDWARE:</span>
+          <span class="chip-state">&check; UNCHANGED (INVARIANT)</span>
+        </div>
+        <div class="pause-chip chip-variable">
+          <span class="chip-legend">PROGRAM MEMORY:</span>
+          <span class="chip-state" id="pauseMemState">UPDATED (DATA ONLY)</span>
+        </div>
+      </div>
+
+      <div class="pause-academic-note">
+        <strong>The Foundational Realization:</strong>
+        Universality implies we do not physically rewire or reconstruct the computer. 
+        Instead, the invariant interpreter reads an alternate encoded procedure description &lang;M&rang; from memory.
+      </div>
+
+      <div class="pause-actions">
+        <button class="btn btn-primary btn-lg" id="pauseProceedBtn">
+          EXECUTE PROGRAM B WITH IDENTICAL HARDWARE &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL / OVERLAY: UNIVERSAL MODE (UTM ARCHITECTURAL VIEW) -->
+  <div class="modal-backdrop" id="utmModal" style="display: none;">
+    <div class="modal-dialog utm-modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="panel-tag">THEORETICAL MODEL</span>
+          <h3 class="modal-title">THE UNIVERSAL TURING MACHINE (&Uscr;) INTERPRETER</h3>
+        </div>
+        <button class="modal-close-btn" id="closeUtmModalBtn">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p class="modal-intro">
+          In 1936, Alan Turing proved that a single machine &Uscr; can simulate any arbitrary Turing machine M 
+          by receiving the formal description &lang;M&rang; and input string w as data on its tape.
+        </p>
+
+        <!-- UTM Visual Data Flow Diagram -->
+        <div class="utm-diagram-container">
+          <div class="flow-block flow-input">
+            <div class="flow-title">ENCODED PROGRAM &lang;M&rang;</div>
+            <code class="flow-code" id="utmFlowCode">101101|A|R|q1|...</code>
+            <div class="flow-sub">+ INPUT STRING (w)</div>
+          </div>
+          
+          <div class="flow-arrow-down">&DownArrow;</div>
+
+          <div class="flow-block flow-machine">
+            <div class="flow-title">UNIVERSAL MACHINE (&Uscr;)</div>
+            <div class="flow-badge">FIXED HARDWARE / INTERPRETER ENGINE</div>
+            <div class="flow-fetch-loop">
+              <span class="loop-step">1. FETCH &lang;&delta;&rang;</span>
+              <span class="loop-step">2. MATCH (q, &sigma;)</span>
+              <span class="loop-step">3. EXECUTE (q', &sigma;', D)</span>
+            </div>
+          </div>
+
+          <div class="flow-arrow-down">&DownArrow;</div>
+
+          <div class="flow-block flow-output">
+            <div class="flow-title">SIMULATED EXECUTION &rarr; OUTPUT</div>
+            <div class="flow-sub">Result equivalent to physical purpose-built machine M(w)</div>
+          </div>
+        </div>
+
+        <div class="utm-ai-analogy">
+          <div class="analogy-header">
+            <strong>FOUNDATION FOR AI &amp; MODERN COMPUTING:</strong>
+          </div>
+          <p>
+            Modern AI architectures (Transformers, LLMs) do not physically rewire silicon. 
+            Instead, a fixed universal neural processing unit interprets encoded program weights and tokenized instructions &mdash; exactly conforming to the Universal Turing Machine model.
+          </p>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="dismissUtmModalBtn">CLOSE ARCHITECTURE VIEW</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL / OVERLAY: FINAL WOW SCREEN (HALT & UNIVERSAL COMPUTATION SYNTHESIS) -->
+  <div class="modal-backdrop" id="wowModal" style="display: none;">
+    <div class="modal-dialog wow-modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="panel-tag">COMPUTATION HALTED // UNIVERSAL THEOREM VERIFIED</span>
+          <h3 class="modal-title">UNIVERSAL COMPUTATION DEMONSTRATED</h3>
+        </div>
+        <button class="modal-close-btn" id="closeWowModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="wow-headline">
+          <div class="wow-subtitle">ACADEMIC CONCLUSION FROM COMPUTER-SCIENCE EXPERIMENT:</div>
+          <h2 class="wow-main-title">ONE UNIVERSAL MACHINE CAN EXECUTE DIFFERENT ENCODED COMPUTATIONS</h2>
+          <div class="wow-triplet-summary">
+            <span class="triplet-item"><strong>MACHINE:</strong> SAME</span>
+            <span class="triplet-item"><strong>PROGRAM:</strong> DIFFERENT</span>
+            <span class="triplet-item"><strong>BEHAVIOR:</strong> DIFFERENT</span>
+          </div>
+        </div>
+
+        <!-- Synthesis Architectural Diagram -->
+        <div class="synthesis-diagram">
+          <div class="synth-programs-col">
+            <div class="synth-box prog-box" id="synthBoxA">
+              <span class="tag">PROGRAM A</span>
+              <span class="name">SYMBOL SHIFT</span>
+              <code class="synth-enc">&lang;M<sub>A</sub>&rang;</code>
+            </div>
+            <div class="synth-box prog-box" id="synthBoxB">
+              <span class="tag">PROGRAM B</span>
+              <span class="name">XOR TRANSFORM</span>
+              <code class="synth-enc">&lang;M<sub>B</sub>&rang;</code>
+            </div>
+            <div class="synth-box prog-box" id="synthBoxC">
+              <span class="tag">PROGRAM C</span>
+              <span class="name">BIT PATTERN</span>
+              <code class="synth-enc">&lang;M<sub>C</sub>&rang;</code>
+            </div>
+          </div>
+
+          <div class="synth-connectors-col">
+            <div class="conn-line">&xrarr;</div>
+            <div class="conn-line">&xrarr;</div>
+            <div class="conn-line">&xrarr;</div>
+          </div>
+
+          <div class="synth-center-col">
+            <div class="synth-machine-monolith">
+              <div class="monolith-label">UNIVERSAL EXECUTION CORE</div>
+              <div class="monolith-title">UNIVERSAL COMPUTATION UNIT (&Uscr;)</div>
+              <div class="monolith-status">&check; INVARIANT HARDWARE</div>
+              <div class="monolith-math">&Uscr;(&lang;M&rang;, w) = M(w)</div>
+              <div class="monolith-sub">Interprets &lang;M&rang; as Data</div>
+            </div>
+          </div>
+
+          <div class="synth-connectors-col">
+            <div class="conn-line">&xrarr;</div>
+            <div class="conn-line">&xrarr;</div>
+            <div class="conn-line">&xrarr;</div>
+          </div>
+
+          <div class="synth-outputs-col">
+            <div class="synth-box out-box">
+              <span class="tag">OUTPUT A</span>
+              <code class="out-val" id="wowOutA">Pending</code>
+            </div>
+            <div class="synth-box out-box">
+              <span class="tag">OUTPUT B</span>
+              <code class="out-val" id="wowOutB">Pending</code>
+            </div>
+            <div class="synth-box out-box">
+              <span class="tag">OUTPUT C</span>
+              <code class="out-val" id="wowOutC">Pending</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mathematical Idea Summary -->
+        <div class="wow-math-recap">
+          <div class="recap-title">THE MATHEMATICAL ABSTRACTION BEHIND THE DEMO:</div>
+          <div class="recap-formula">&Uscr;(&lang;M&rang;, w) = M(w)</div>
+          <div class="recap-steps">
+            <span>Encoded Machine / Program (&lang;M&rang;)</span>
+            <span class="recap-arrow">&plus;</span>
+            <span>Input (w)</span>
+            <span class="recap-arrow">&xrarr;</span>
+            <span class="recap-highlight">Universal Machine &Uscr;</span>
+            <span class="recap-arrow">&xrarr;</span>
+            <span>Result M(w)</span>
+          </div>
+        </div>
+
+        <div class="wow-result-summary" id="wowCurrentRunSummary">
+          Current execution halted after <strong id="wowStepCount">0</strong> cycles. 
+          Final tape output: <code id="wowTapeResult">[ ]</code>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="wowResetBtn">RESET SIMULATION</button>
+        <button class="btn btn-primary" id="dismissWowModalBtn">CONTINUE OBSERVATION</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOGGLEABLE PRESENTER REHEARSAL CUE DOCK (HIDDEN BY DEFAULT) -->
+  <div class="presenter-cue-dock" id="presenterCueDock" style="display: none;">
+    <div class="cue-header">
+      <div class="cue-title-group">
+        <span class="cue-badge">PRESENTER REHEARSAL CUE</span>
+        <span class="cue-phase-tag" id="cuePhaseIndicator">PHASE 1: PROGRAM A</span>
+      </div>
+      <button class="cue-close-btn" id="closeCueBtn" title="Close Presenter Cues">&times;</button>
+    </div>
+    <div class="cue-body">
+      <div class="cue-item cue-action">
+        <span class="cue-label">PHYSICAL ACTION:</span>
+        <span class="cue-text" id="cuePromptAction">Point to the machine.</span>
+      </div>
+      <div class="cue-item cue-speech">
+        <span class="cue-label">SPOKEN SCRIPT:</span>
+        <span class="cue-text" id="cueScript">&ldquo;Notice this physical machine. I run Program A and obtain Output A.&rdquo;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRESENTATION MODE TOOLBAR (Visible only when in Presentation Mode) -->
+  <div class="presentation-dock" id="presentationDock" style="display: none;">
+    <div class="pres-info-group">
+      <div class="pres-title">PRESENTATION MODE &mdash; UNIVERSAL COMPUTATION UNIT</div>
+      <div class="pres-invariance-badge">[ MACHINE HARDWARE: UNCHANGED ]</div>
+    </div>
+    <div class="pres-status" id="presStatusText">STATE: q0 | STEP: 0</div>
+    <div class="pres-controls">
+      <button id="presStepBtn" class="btn btn-primary btn-lg">STEP (&#9654;&#10073;)</button>
+      <button id="presRunBtn" class="btn btn-success btn-lg">RUN (&#9654;)</button>
+      <button id="presPauseBtn" class="btn btn-warning btn-lg" disabled>PAUSE</button>
+      <button id="presResetBtn" class="btn btn-danger btn-lg">RESET</button>
+      <button id="presDemoNextBtn" class="btn btn-secondary btn-lg" title="Advance to next presentation phase">NEXT PHASE &rarr;</button>
+      <button id="exitPresentationBtn" class="btn btn-ghost btn-lg">EXIT PRESENTATION</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
