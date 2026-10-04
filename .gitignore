@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
 
-# Vercel deployment artifacts
+# Vercel & build deployment artifacts
 .vercel/
+dist/
 
 # Operating System Files
 .DS_Store

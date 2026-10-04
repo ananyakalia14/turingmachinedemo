@@ -1,100 +1,76 @@
-# Universal Computation Unit (UTM Simulator)
-### *AI-Inspired Computation Using the Universal Turing Machine Model*
+# Turing Machine Visual Simulator
+### *Interactive Simulation of Turing Machines with Transition Function, Hierarchical State Diagram, and Tape Execution*
 
-An interactive, academic-grade web apparatus demonstrating Alan Turing's groundbreaking 1936 concept of **Universal Computation** and its direct architectural lineage to modern Artificial Intelligence.
+An academic educational apparatus engineered for students and educators in **Theory of Computation**, **Formal Languages & Automata**, and **Computer Engineering**.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fananyakalia14%2Fturingmachinedemo)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Status](https://img.shields.io/badge/status-ready%20for%20deployment-success.svg)
-
----
-
-## 💡 The Core Thesis
-
-> **"One machine. Different encoded programs. Different computations."**
-
-In 1936, Alan Turing proved that instead of building dedicated physical circuitry for every distinct mathematical or logical problem, one could build a **single invariant universal machine** $U$. By encoding a program $\langle M \rangle$ and its data $w$ onto a shared memory medium (the tape), $U(\langle M \rangle, w) = M(w)$.
-
-This simulator illustrates the profound connection between:
-- **Turing's Invariant Universal Machine** $\longleftrightarrow$ **General-Purpose Hardware (CPUs / GPUs / TPUs)**
-- **Encoded Turing Table on Tape** $\longleftrightarrow$ **Software Code / Neural Network Weights**
-- **Tape Input & Output** $\longleftrightarrow$ **Inference Tokens, Prompts & Predictions**
+The simulator provides a 100% mathematically rigorous, real-time visual simulation of a standard 7-tuple deterministic Turing Machine:
+$$M = (Q, \Sigma, \Gamma, \delta, q_0, B, F)$$
 
 ---
 
-## ✨ Features
+## 🌟 Key Refinements & New Features
 
-- 📼 **Interactive Tape Visualizer**: Bidirectional infinite tape with head animation, live read/write indicators, and cell markers.
-- ⚙️ **Dual Program Demonstrations**:
-  - **Program A (Symbol Shift)**: Demonstrates fundamental data movement with state-carried bit propagation and tape rewind.
-  - **Program B (XOR Cryptographic Transform)**: Multi-track bitwise XOR between an input binary stream and a cryptographic key.
-- 🎓 **3-Phase Guided University Examination Demo**:
-  - **Phase 1**: Execute Program A — Symbol Shift.
-  - **Phase 2**: Reconfigure Program Memory — Hot-swap encoded instructions to Program B while proving hardware invariants remain unchanged.
-  - **Phase 3**: Execute Program B — XOR Transform, verifying the Universal Architecture.
-- 🎙️ **Presenter Cues**: Integrated rehearsal scripts and physical presentation pointers designed for seamless academic presentations.
-- 📐 **Universal Mode (UTM Mode)**: Shows explicit UTM encoding ($\langle M \rangle \# w$) simulated directly on a virtual universal interpreter.
-- 🖥️ **Presentation Mode**: Minimalist high-contrast full-screen HUD optimized for lecture hall projection and screen shares.
-- 📊 **Dynamic State Transition Register**: Real-time inspection of formal 7-tuple state transitions $\delta(q, \sigma) \to (q', \sigma', D)$.
+1. **Light Theme as Default**:
+   - Opens by default in a clean, high-contrast academic **Light Theme** (warm white/slate background, crisp white cards, dark navy typography, blue/purple accents).
+   - Instant **Theme Toggle** in header: `☀ Light` / `🌙 Dark` with full application persistence.
+
+2. **Clean Hierarchical State Diagram (Zero Overlaps)**:
+   - Completely redesigned automaton layout with **minimized edge crossings**.
+   - **Non-colliding transition labels**: Each transition group (`a / X, R`) has dedicated coordinates and clean background pills that never intersect arrows or nodes.
+   - **Compact directional self-loops**: Positioned neatly on designated edges (top, bottom, left) without stacking collisions.
+   - **Teaching descriptions under states**: Clear pedagogical notes under each node ($q_0$: "Find next a", $q_1$: "Find matching b", $q_2$: "Return left", $q_3$: "Verify remaining", $q_{\text{accept}}$: "Accept ✓", $q_{\text{reject}}$: "Reject ✕").
+   - **Selective transition animation**: Calm when idle; only the executing transition arrow receives strong animation and glow.
+
+3. **Real Independent Machines**:
+   - Switching problems completely swaps:
+     1. Formal 7-tuple definition
+     2. Finite state set $Q$
+     3. Input alphabet $\Sigma$ and tape alphabet $\Gamma$
+     4. Transition function table $\delta$
+     5. State transition graph
+     6. Preset examples
+     7. Tape initialization and simulation logic
+     8. Step-by-step educational explanations
+     9. Acceptance and rejection criteria
+
+4. **Turing Machine Question Bank**:
+   - **Basic**:
+     - $a^n b^n$ ($L = \{ a^n b^n \mid n \ge 1 \}$) [Ready]
+     - Unary Increment ($x \to x + 1$) [Ready]
+     - Equal number of 0s and 1s ($N_0(w) = N_1(w)$) [Ready]
+     - Even number of 1s (Parity checking) [Ready]
+   - **Intermediate**:
+     - Binary Palindrome ($w = w^R$) [Ready]
+     - $a^n b^{2n}$ [Ready]
+     - $a^n b^n c^n$ [Coming Soon]
+   - **Advanced**:
+     - String Copy ($w \to w w$) [Coming Soon]
+     - Binary Addition ($A + B$) [Coming Soon]
+     - Binary Subtraction ($A - B$) [Coming Soon]
+
+5. **Build Your Own Machine (Custom TM Builder)**:
+   - Full in-browser editor allowing teachers and students to define custom states, alphabets, initial/accept/reject states, and transition rules ($\delta(q, \sigma) \to (q', \sigma', D)$).
+   - Instantly compiles into an interactive tape, state diagram, and transition table!
+
+6. **Clean Initial State (Never Starts Accepted)**:
+   - Loading any machine or input starts strictly in **`READY TO RUN`** at Step 0, with un-processed input on tape and head at index 0.
+
+7. **🎬 Live Teaching Theater Mode**:
+   - Fullscreen projection view for lecture halls with Question Selector, Input Selector, Play/Pause, Step Forward/Backward, Speed Slider, Tape, Head, Transition Formula, and State Diagram.
 
 ---
 
-## 🚀 Live Deployment on Vercel
+## 🚀 Running Locally
 
-This repository is pre-configured with `vercel.json` for zero-configuration, lightning-fast deployment on [Vercel](https://vercel.com):
-
-1. Go to [Vercel Dashboard](https://vercel.com/new).
-2. Connect your GitHub account and import `ananyakalia14/turingmachinedemo`.
-3. Keep default settings (Framework Preset: **Other** / Root Directory: `./`).
-4. Click **Deploy**.
-
-Alternatively, install the Vercel CLI:
 ```bash
-npm i -g vercel
-vercel
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build production bundle
+npm run build
 ```
 
----
-
-## 💻 Running Locally
-
-No build tools or bundlers required! The project uses native ES6+, vanilla CSS, and standard HTML5.
-
-### Option 1: Using Python
-```bash
-# Python 3
-python -m http.server 3000
-```
-Then open `http://localhost:3000` in your browser.
-
-### Option 2: Using Node / npx
-```bash
-npx serve .
-# or
-npm start
-```
-
-### Option 3: VS Code Live Server
-Right-click `index.html` in VS Code and select **"Open with Live Server"**.
-
----
-
-## 📂 Project Structure
-
-```
-├── index.html       # Semantic HTML5 single-page application layout & UI controls
-├── styles.css       # Responsive dark academic-grade design system & animations
-├── script.js        # Formal Turing Machine simulation engine, state machine, & UI controller
-├── vercel.json      # Vercel deployment configuration & security headers
-├── package.json     # Project metadata and quick-start scripts
-└── README.md        # Documentation and academic context
-```
-
----
-
-## 📜 Academic Attribution
-
-Designed for 3rd-Year Computer Engineering & Theory of Computation curricula:
-- **Course**: Theory of Computation / Formal Languages and Automata (COMP-ENG 301)
-- **Concept**: Universal Turing Machine ($M_U$), Alan Turing (1936)
-- **Author**: Ananya Kalia ([@ananyakalia14](https://github.com/ananyakalia14))
+Then visit [http://localhost:3000](http://localhost:3000) in your web browser.
