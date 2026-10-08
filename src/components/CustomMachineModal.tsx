@@ -31,12 +31,17 @@ interface CustomMachineModalProps {
 }
 
 const EXAMPLE_PROMPTS = [
-  { label: 'aⁿbⁿ', query: 'Design a Turing Machine for L = { aⁿbⁿ | n ≥ 1 }' },
-  { label: 'aⁿbⁿcⁿ', query: 'Design a Turing Machine for L = { aⁿbⁿcⁿ | n ≥ 1 }' },
-  { label: 'Palindrome over {0,1}', query: 'Binary Palindrome: L = { w ∈ {0,1}* | w = wᴿ }' },
-  { label: 'Equal number of 0s and 1s', query: 'Equal number of 0s and 1s: L = { w | N₀(w) = N₁(w) }' },
-  { label: 'Unary increment', query: 'Unary increment: f(x) = x + 1' },
-  { label: 'aⁿb²ⁿ', query: 'Design a Turing Machine for L = { aⁿb²ⁿ | n ≥ 1 }' },
+  { label: "Binary Decrement", query: "Design Turing Machine for Decrement of Binary Number by one" },
+  { label: "Unary to Binary", query: "Design Turing Machine for unary to Binary Converter" },
+  { label: "1's Complement", query: "Design a Turing Machine to compute 1's complement of a binary number" },
+  { label: "2's Complement", query: "Design a Turing Machine to compute 2's complement of a binary number" },
+  { label: "Language '01*0'", query: "Design a Turing Machine that accepts language '01*0' over input{0,1}" },
+  { label: "Language 'aba'", query: "Design a Turing Machine that accepts language 'aba' over input{a,b}" },
+  { label: 'aⁿbⁿ', query: "Design a Turing Machine for L = { aⁿbⁿ | n ≥ 1 }" },
+  { label: 'aⁿbⁿcⁿ', query: "Design a Turing Machine for L = { aⁿbⁿcⁿ | n ≥ 1 }" },
+  { label: 'Palindrome over {0,1}', query: "Binary Palindrome: L = { w ∈ {0,1}* | w = wᴿ }" },
+  { label: 'Equal 0s and 1s', query: "Equal number of 0s and 1s: L = { w | N₀(w) = N₁(w) }" },
+  { label: 'Binary increment', query: "Binary increment: f(w) = w + 1" },
 ];
 
 const GENERATION_STEPS = [
@@ -55,7 +60,7 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
   onSaveMachine,
 }) => {
   // Input and generation state
-  const [questionInput, setQuestionInput] = useState('Design a Turing Machine for L = { aⁿbⁿcⁿ | n ≥ 1 }');
+  const [questionInput, setQuestionInput] = useState("Design a Turing Machine that accepts language 'aba' over input{a,b}");
   const [stepMode, setStepMode] = useState<'INPUT' | 'CLARIFICATION' | 'GENERATING' | 'UNSUPPORTED' | 'ERROR'>('INPUT');
   const [activeGenStep, setActiveGenStep] = useState(0);
   const [interpretation, setInterpretation] = useState<InterpretationResult | null>(null);
@@ -66,14 +71,30 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
 
   // Advanced manual inspection / editing panel state
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [name, setName] = useState('Generated Turing Machine');
-  const [statesInput, setStatesInput] = useState('');
-  const [alphabetInput, setAlphabetInput] = useState('');
-  const [tapeAlphabetInput, setTapeAlphabetInput] = useState('');
-  const [initialState, setInitialState] = useState('');
-  const [acceptState, setAcceptState] = useState('');
-  const [rejectState, setRejectState] = useState('');
-  const [transitionsText, setTransitionsText] = useState('');
+  const [name, setName] = useState('Custom Turing Machine');
+  const [statesInput, setStatesInput] = useState('q0, q1, q2, q3, q_accept, q_reject');
+  const [alphabetInput, setAlphabetInput] = useState('a, b');
+  const [tapeAlphabetInput, setTapeAlphabetInput] = useState('a, b, X, Y, B');
+  const [initialState, setInitialState] = useState('q0');
+  const [acceptState, setAcceptState] = useState('q_accept');
+  const [rejectState, setRejectState] = useState('q_reject');
+  const [transitionsText, setTransitionsText] = useState(
+    [
+      '# Exact match for string "aba" (a -> X, b -> Y)',
+      'q0, a -> q1, X, R',
+      'q0, b -> q_reject, b, R',
+      'q0, B -> q_reject, B, R',
+      'q1, b -> q2, Y, R',
+      'q1, a -> q_reject, a, R',
+      'q1, B -> q_reject, B, R',
+      'q2, a -> q3, X, R',
+      'q2, b -> q_reject, b, R',
+      'q2, B -> q_reject, B, R',
+      'q3, B -> q_accept, B, R',
+      'q3, a -> q_reject, a, R',
+      'q3, b -> q_reject, b, R',
+    ].join('\n')
+  );
 
   // Reset or initialize when opened
   useEffect(() => {
@@ -179,12 +200,22 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
   const handleCompileAdvanced = () => {
     try {
       setValidationError(null);
-      const states = statesInput.split(',').map((s) => s.trim()).filter(Boolean);
-      const inputAlphabet = alphabetInput.split(',').map((s) => s.trim()).filter(Boolean);
-      const tapeAlphabet = tapeAlphabetInput.split(',').map((s) => s.trim()).filter(Boolean);
+      let states = statesInput.split(',').map((s) => s.trim()).filter(Boolean);
+      let inputAlphabet = alphabetInput.split(',').map((s) => s.trim()).filter(Boolean);
+      let tapeAlphabet = tapeAlphabetInput.split(',').map((s) => s.trim()).filter(Boolean);
 
-      if (!states.includes(initialState)) {
-        throw new Error(`Initial state '${initialState}' must be in states list.`);
+      const initSt = initialState.trim() || states[0] || 'q0';
+      const accSt = acceptState.trim() || 'q_accept';
+      const rejSt = rejectState.trim() || 'q_reject';
+
+      if (!states.includes(initSt)) states.unshift(initSt);
+      if (!states.includes(accSt)) states.push(accSt);
+      if (!states.includes(rejSt)) states.push(rejSt);
+
+      if (inputAlphabet.length === 0) inputAlphabet = ['a', 'b'];
+      if (!tapeAlphabet.includes('B')) tapeAlphabet.push('B');
+      for (const s of inputAlphabet) {
+        if (!tapeAlphabet.includes(s)) tapeAlphabet.unshift(s);
       }
 
       const transitions: Transition[] = [];
@@ -230,20 +261,41 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
         throw new Error('At least one transition rule must be provided.');
       }
 
-      // Preserve existing positions if available, or generate clean coordinates
-      const statePositions = generatedMachine?.statePositions || {};
+      // Automatically arrange state positions nicely
+      const statePositions = { ...(generatedMachine?.statePositions || {}) };
       const numStates = states.length;
       states.forEach((st, idx) => {
         if (!statePositions[st]) {
-          const angle = (idx / numStates) * 2 * Math.PI - Math.PI / 2;
-          statePositions[st] = {
-            x: Math.round(450 + 260 * Math.cos(angle)),
-            y: Math.round(180 + 110 * Math.sin(angle)),
-            label: st,
-            description: st === initialState ? 'Start State' : st === acceptState ? 'Accept State' : st === rejectState ? 'Reject State' : 'Intermediate',
-            role: st === initialState ? 'start' : st === acceptState ? 'accept' : st === rejectState ? 'reject' : 'normal',
-            color: st === initialState ? '#2563eb' : st === acceptState ? '#16a34a' : st === rejectState ? '#dc2626' : '#7c3aed',
-          };
+          const spacing = Math.min(180, Math.max(120, Math.floor(720 / Math.max(1, numStates))));
+          const startX = 100;
+          if (st === rejSt) {
+            statePositions[st] = {
+              x: Math.round(startX + (numStates / 2) * spacing),
+              y: 250,
+              label: st,
+              description: 'Reject State',
+              role: 'reject',
+              color: '#dc2626',
+            };
+          } else if (st === accSt) {
+            statePositions[st] = {
+              x: startX + (numStates - 1) * spacing,
+              y: 120,
+              label: st,
+              description: 'Accept State',
+              role: 'accept',
+              color: '#16a34a',
+            };
+          } else {
+            statePositions[st] = {
+              x: startX + idx * spacing,
+              y: 120,
+              label: st,
+              description: st === initSt ? 'Start State' : 'Intermediate State',
+              role: st === initSt ? 'start' : 'normal',
+              color: st === initSt ? '#2563eb' : '#7c3aed',
+            };
+          }
         }
       });
 
@@ -256,13 +308,15 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
         states,
         inputAlphabet,
         tapeAlphabet,
-        initialState,
+        initialState: initSt,
         blankSymbol: 'B',
-        acceptStates: [acceptState],
-        rejectStates: [rejectState],
+        acceptStates: [accSt],
+        rejectStates: [rejSt],
         transitions,
-        defaultInput: 'aabbcc',
-        presetInputs: [],
+        defaultInput: 'aba',
+        presetInputs: [
+          { label: 'aba (Sample)', value: 'aba', expected: 'ACCEPT', note: 'Sample run' }
+        ],
         statePositions,
         explanationGuide: {
           title: 'Custom Machine Execution',
@@ -278,10 +332,10 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
         states,
         inputAlphabet,
         tapeAlphabet,
-        initialState,
+        initialState: initSt,
         blankSymbol: 'B',
-        acceptStates: [acceptState],
-        rejectStates: [rejectState],
+        acceptStates: [accSt],
+        rejectStates: [rejSt],
         transitions,
         statePositions,
       };
@@ -504,14 +558,24 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
                   Unsupported Language Problem
                 </h4>
                 <p className="text-xs text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed">
-                  I can understand the language, but I cannot reliably construct a correct machine automatically yet.
+                  I can understand the language, but I cannot reliably construct a correct machine automatically yet. You can still define your states and transitions manually below!
                 </p>
-                <div className="pt-2">
+                <div className="pt-2 flex justify-center gap-3">
                   <button
                     onClick={() => setStepMode('INPUT')}
-                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-md"
+                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                   >
                     Try another question
+                  </button>
+                  <button
+                    onClick={() => {
+                      setStepMode('INPUT');
+                      setShowAdvanced(true);
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-md flex items-center gap-1.5"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Open Manual Editor</span>
                   </button>
                 </div>
               </motion.div>
@@ -540,6 +604,16 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
                   >
                     Edit Question
                   </button>
+                  <button
+                    onClick={() => {
+                      setStepMode('INPUT');
+                      setShowAdvanced(true);
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-md flex items-center gap-1.5"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Fix in Manual Editor</span>
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -552,7 +626,7 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
                 className="flex items-center gap-2 text-xs font-mono font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors w-full"
               >
                 {showAdvanced ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                <span>Advanced: Edit Generated Machine (Optional)</span>
+                <span>Advanced: Manual Transition Editor / Custom Machine</span>
               </button>
 
               <AnimatePresence>
@@ -564,7 +638,7 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
                     className="space-y-4 pt-4 overflow-hidden text-xs font-mono"
                   >
                     <p className="text-slate-500 font-sans text-xs">
-                      Inspect or modify the generated mathematical tuple and transition rules directly.
+                      Inspect or modify the 7-tuple definition and transition rules directly.
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -581,7 +655,7 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
                       </div>
                       <div>
                         <label className="text-slate-600 dark:text-slate-400 font-bold block mb-1">
-                          States Q:
+                          States Q (comma-separated):
                         </label>
                         <input
                           type="text"
@@ -606,7 +680,32 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
                       </div>
                       <div>
                         <label className="text-slate-600 dark:text-slate-400 font-bold block mb-1">
-                          Input Alphabet Σ:
+                          Accept State:
+                        </label>
+                        <input
+                          type="text"
+                          value={acceptState}
+                          onChange={(e) => setAcceptState(e.target.value)}
+                          className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-slate-600 dark:text-slate-400 font-bold block mb-1">
+                          Reject State:
+                        </label>
+                        <input
+                          type="text"
+                          value={rejectState}
+                          onChange={(e) => setRejectState(e.target.value)}
+                          className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-slate-600 dark:text-slate-400 font-bold block mb-1">
+                          Input Alphabet Σ (comma-separated):
                         </label>
                         <input
                           type="text"
@@ -617,7 +716,7 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
                       </div>
                       <div>
                         <label className="text-slate-600 dark:text-slate-400 font-bold block mb-1">
-                          Tape Alphabet Γ:
+                          Tape Alphabet Γ (comma-separated):
                         </label>
                         <input
                           type="text"
@@ -633,7 +732,7 @@ export const CustomMachineModal: React.FC<CustomMachineModalProps> = ({
                         Transitions δ (Format: state, read → nextState, write, move):
                       </label>
                       <textarea
-                        rows={6}
+                        rows={7}
                         value={transitionsText}
                         onChange={(e) => setTransitionsText(e.target.value)}
                         className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 font-mono text-xs leading-relaxed"

@@ -64,6 +64,14 @@ export const Tape: React.FC<TapeProps> = ({
               symbolColor = 'text-purple-600 dark:text-purple-400 font-extrabold';
               cellBg = 'bg-purple-50 dark:bg-purple-950/40 border-purple-400 dark:border-purple-700/80';
               borderGlow = 'shadow-sm';
+            } else if (cell.symbol === 'Z') {
+              symbolColor = 'text-emerald-600 dark:text-emerald-400 font-extrabold';
+              cellBg = 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-700/80';
+              borderGlow = 'shadow-sm';
+            } else if (cell.symbol === 'W') {
+              symbolColor = 'text-amber-600 dark:text-amber-400 font-extrabold';
+              cellBg = 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-700/80';
+              borderGlow = 'shadow-sm';
             } else if (cell.symbol === 'a') {
               symbolColor = 'text-indigo-700 dark:text-blue-300 font-bold';
               cellBg = 'bg-indigo-50/50 dark:bg-blue-950/30 border-indigo-200 dark:border-blue-800/60';
@@ -76,6 +84,13 @@ export const Tape: React.FC<TapeProps> = ({
             } else if (cell.symbol === '0') {
               symbolColor = 'text-teal-700 dark:text-teal-300 font-bold';
               cellBg = 'bg-teal-50/50 dark:bg-teal-950/30 border-teal-200 dark:border-teal-800/60';
+            } else if (cell.symbol === '#') {
+              symbolColor = 'text-rose-600 dark:text-rose-400 font-extrabold';
+              cellBg = 'bg-rose-50 dark:bg-rose-950/40 border-rose-400 dark:border-rose-700/80';
+              borderGlow = 'shadow-sm';
+            } else if (cell.symbol === 'c') {
+              symbolColor = 'text-pink-700 dark:text-pink-300 font-bold';
+              cellBg = 'bg-pink-50/50 dark:bg-pink-950/30 border-pink-200 dark:border-pink-800/60';
             } else if (cell.symbol === 'B') {
               symbolColor = 'text-slate-400 dark:text-slate-600 font-medium';
               cellBg = 'bg-slate-50 dark:bg-slate-950/70 border-slate-200 dark:border-slate-850';

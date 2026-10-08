@@ -119,27 +119,59 @@ export const StateDiagram: React.FC<StateDiagramProps> = ({
     // Direct / Curved transition edges between distinct states
     const dx = toPos.x - fromPos.x;
     const dy = toPos.y - fromPos.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.max(1, Math.sqrt(dx * dx + dy * dy));
 
     const curveOffset = layout.curveOffset ?? 0;
+    const isToReject = machine.rejectStates.includes(group.to) || group.to.includes('reject');
 
-    let pathD = '';
-    let lx = (fromPos.x + toPos.x) / 2;
-    let ly = (fromPos.y + toPos.y) / 2;
+    // Format label cleanly with compact syntax for reject edges to eliminate horizontal collision
+    let displayLabel = group.labels.join('  •  ');
+    if (isToReject && group.labels.length > 1) {
+      const readSymbols = Array.from(
+        new Set(
+          group.labels.map((l) => {
+            const parts = l.split('/');
+            return parts[0].trim();
+          })
+        )
+      );
+      if (readSymbols.length <= 3) {
+        displayLabel = `${readSymbols.join(', ')} / R`;
+      } else {
+        displayLabel = `${readSymbols.slice(0, 2).join(', ')}, … / R`;
+      }
+    }
 
-    if (curveOffset !== 0) {
+    let lx: number;
+    let ly: number;
+
+    if (isToReject) {
+      // Radial ray position from fromPos down towards q_reject
+      // Positions pill in the open diagonal area between top state badges (y≈155) and bottom reject state (y≈295)
+      const t = 0.58;
+      lx = fromPos.x + dx * t;
+      ly = fromPos.y + dy * t;
+    } else if (curveOffset !== 0) {
       // Quadratic Bezier arc with perpendicular control point
       const midX = (fromPos.x + toPos.x) / 2 + (-dy / dist) * curveOffset;
       const midY = (fromPos.y + toPos.y) / 2 + (dx / dist) * curveOffset;
-      pathD = `M ${fromPos.x} ${fromPos.y} Q ${midX} ${midY} ${toPos.x} ${toPos.y}`;
       lx = midX;
       ly = midY - 6;
     } else {
-      // Clean straight line
+      // Clean forward straight horizontal edge - place label clearly above the line
+      const midX = (fromPos.x + toPos.x) / 2;
+      const midY = (fromPos.y + toPos.y) / 2;
+      lx = midX;
+      ly = midY - 26;
+    }
+
+    let pathD = '';
+    if (curveOffset !== 0) {
+      const midX = (fromPos.x + toPos.x) / 2 + (-dy / dist) * curveOffset;
+      const midY = (fromPos.y + toPos.y) / 2 + (dx / dist) * curveOffset;
+      pathD = `M ${fromPos.x} ${fromPos.y} Q ${midX} ${midY} ${toPos.x} ${toPos.y}`;
+    } else {
       pathD = `M ${fromPos.x} ${fromPos.y} L ${toPos.x} ${toPos.y}`;
-      // Offset label perpendicular to straight line so it never sits on the arrow
-      lx = lx + (-dy / dist) * 14;
-      ly = ly + (dx / dist) * 14;
     }
 
     edges.push({
@@ -147,9 +179,9 @@ export const StateDiagram: React.FC<StateDiagramProps> = ({
       from: group.from,
       to: group.to,
       pathD,
-      labelX: layout.labelX ?? lx,
-      labelY: layout.labelY ?? ly,
-      labelText: group.labels.join('  •  '),
+      labelX: layout.labelX ?? Math.round(lx),
+      labelY: layout.labelY ?? Math.round(ly),
+      labelText: displayLabel,
       isActive: group.isActive,
       isSelfLoop: false,
     });

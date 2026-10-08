@@ -38,6 +38,33 @@ export const QUESTION_BANK_CATALOG: QuestionBankItem[] = [
     status: 'Ready',
     defaultInput: '101011',
   },
+  {
+    id: 'onesComplement',
+    title: "1's Complement Transducer",
+    category: 'Basic',
+    language: 'f(w) = w̄ (Bitwise NOT)',
+    description: 'Inverts each bit of a binary input (0 ↔ 1) and positions head at MSB.',
+    status: 'Ready',
+    defaultInput: '1011',
+  },
+  {
+    id: 'twosComplement',
+    title: "2's Complement Transducer",
+    category: 'Basic',
+    language: 'f(w) = -w (2\'s Complement)',
+    description: 'Computes two\'s complement by preserving trailing 0s and first 1, inverting prefix bits.',
+    status: 'Ready',
+    defaultInput: '1100',
+  },
+  {
+    id: 'binaryDecrement',
+    title: 'Binary Decrement (w - 1)',
+    category: 'Basic',
+    language: 'f(w) = w - 1 (Base 2)',
+    description: 'Subtracts 1 from a binary number using borrow propagation and leading-zero normalization.',
+    status: 'Ready',
+    defaultInput: '1000',
+  },
 
   // Intermediate
   {
@@ -63,18 +90,20 @@ export const QUESTION_BANK_CATALOG: QuestionBankItem[] = [
     title: 'Language: aⁿbⁿcⁿ',
     category: 'Intermediate',
     language: 'L = { aⁿbⁿcⁿ | n ≥ 1 }',
-    description: '3-symbol context-sensitive matching: triples an equal count of a\'s, b\'s, and c\'s.',
-    status: 'Coming Soon',
+    description: '3-symbol context-sensitive matching: triples an equal count of a\'s, b\'s, and c\'s with X, Y, Z.',
+    status: 'Ready',
+    defaultInput: 'aabbcc',
   },
 
   // Advanced
   {
     id: 'stringCopy',
-    title: 'String Copy (w → w w)',
+    title: 'String Copy (w → w # w)',
     category: 'Advanced',
-    language: 'f(w) = w w',
-    description: 'Duplicates an arbitrary input string onto the tape separated by a delimiter.',
-    status: 'Coming Soon',
+    language: 'f(w) = w # w',
+    description: 'Duplicates an arbitrary input string onto the tape separated by delimiter "#".',
+    status: 'Ready',
+    defaultInput: '01',
   },
   {
     id: 'binaryAddition',
@@ -82,15 +111,26 @@ export const QUESTION_BANK_CATALOG: QuestionBankItem[] = [
     category: 'Advanced',
     language: 'f(a # b) = a + b',
     description: 'Performs multi-digit column binary addition with carry tracking on tape.',
-    status: 'Coming Soon',
+    status: 'Ready',
+    defaultInput: '10#11',
   },
   {
     id: 'binarySubtraction',
-    title: 'Binary Subtraction',
+    title: 'Binary Subtraction (A - B)',
     category: 'Advanced',
     language: 'f(a # b) = a - b (for a ≥ b)',
     description: 'Computes binary subtraction with borrow propagation across tape cells.',
-    status: 'Coming Soon',
+    status: 'Ready',
+    defaultInput: '11#01',
+  },
+  {
+    id: 'unaryToBinary',
+    title: 'Unary to Binary (1ⁿ → bin(n))',
+    category: 'Advanced',
+    language: 'f(1ⁿ) = bin(n) (Base 1 → Base 2)',
+    description: 'Transducer that converts a sequence of unary 1s into its exact standard binary equivalent.',
+    status: 'Ready',
+    defaultInput: '11111',
   },
 ];
 
@@ -588,6 +628,780 @@ export const EVEN_1S_MACHINE: TuringMachineDefinition = {
   ],
 };
 
+/* ------------------------------------------------------------------
+ * MACHINE 7: aⁿbⁿcⁿ
+ * ------------------------------------------------------------------ */
+export const AN_BN_CN_MACHINE: TuringMachineDefinition = {
+  id: 'anbncn',
+  name: 'aⁿbⁿcⁿ',
+  category: 'Intermediate',
+  description: 'Context-Sensitive language Turing Machine for L = { aⁿbⁿcⁿ | n ≥ 1 } using markers X, Y, Z.',
+  formalTitle: 'Language Recognition: aⁿbⁿcⁿ (Context-Sensitive Matching)',
+  language: 'L = { aⁿbⁿcⁿ | n ≥ 1 }',
+  states: ['q0', 'q1', 'q2', 'q3', 'q4', 'q5', 'q_accept', 'q_reject'],
+  inputAlphabet: ['a', 'b', 'c'],
+  tapeAlphabet: ['a', 'b', 'c', 'X', 'Y', 'Z', 'B'],
+  initialState: 'q0',
+  blankSymbol: 'B',
+  acceptStates: ['q_accept'],
+  rejectStates: ['q_reject'],
+  defaultInput: 'aabbcc',
+  presetInputs: [
+    { label: 'abc (n = 1)', value: 'abc', expected: 'ACCEPT', note: 'Minimal valid string' },
+    { label: 'aabbcc (n = 2)', value: 'aabbcc', expected: 'ACCEPT', note: '2 of each symbol' },
+    { label: 'aaabbbccc (n = 3)', value: 'aaabbbccc', expected: 'ACCEPT', note: '3 of each symbol' },
+    { label: 'aabbc (Missing c)', value: 'aabbc', expected: 'REJECT', note: 'Unequal count' },
+    { label: 'abcc (Extra c)', value: 'abcc', expected: 'REJECT', note: 'Unequal count' },
+    { label: 'cba (Wrong order)', value: 'cba', expected: 'REJECT', note: 'Reversed order' },
+  ],
+  algorithmPhases: [
+    { id: 'MARK_A', label: 'MARK "a"', description: 'Find leftmost "a" and mark as "X"', states: ['q0'], color: '#2563eb' },
+    { id: 'SEEK_B', label: 'MATCH "b"', description: 'Find matching "b" and mark as "Y"', states: ['q1'], color: '#7c3aed' },
+    { id: 'SEEK_C', label: 'MATCH "c"', description: 'Find matching "c" and mark as "Z"', states: ['q2'], color: '#16a34a' },
+    { id: 'REWIND', label: 'REWIND', description: 'Return left to marker "X"', states: ['q3'], color: '#d97706' },
+    { id: 'VERIFY', label: 'VERIFY', description: 'Confirm all symbols matched', states: ['q4', 'q5'], color: '#0891b2' },
+  ],
+  statePositions: {
+    q0: { x: 120, y: 115, label: 'q0', description: 'Mark next a', role: 'start', color: '#2563eb' },
+    q1: { x: 280, y: 115, label: 'q1', description: 'Match b', role: 'normal', color: '#7c3aed' },
+    q2: { x: 440, y: 115, label: 'q2', description: 'Match c', role: 'normal', color: '#16a34a' },
+    q3: { x: 280, y: 240, label: 'q3', description: 'Rewind left', role: 'normal', color: '#d97706' },
+    q4: { x: 600, y: 115, label: 'q4', description: 'Verify Y', role: 'normal', color: '#0891b2' },
+    q5: { x: 740, y: 115, label: 'q5', description: 'Verify Z', role: 'normal', color: '#0284c7' },
+    q_accept: { x: 860, y: 115, label: 'q_accept', description: 'Accept ✓', role: 'accept', color: '#16a34a' },
+    q_reject: { x: 600, y: 295, label: 'q_reject', description: 'Reject ✕', role: 'reject', color: '#dc2626' },
+  },
+  edgeLayouts: {
+    'q0-->q1': { labelX: 200, labelY: 82, curveOffset: 0 },
+    'q1-->q2': { labelX: 360, labelY: 82, curveOffset: 0 },
+    'q2-->q3': { labelX: 360, labelY: 180, curveOffset: 0 },
+    'q3-->q0': { labelX: 190, labelY: 190, curveOffset: 0 },
+    'q0-->q4': { labelX: 420, labelY: 25, curveOffset: 45 },
+    'q4-->q5': { labelX: 670, labelY: 82, curveOffset: 0 },
+    'q5-->q_accept': { labelX: 800, labelY: 82, curveOffset: 0 },
+    'q0-->q0': { loopDirection: 'left' },
+    'q1-->q1': { loopDirection: 'top' },
+    'q2-->q2': { loopDirection: 'top' },
+    'q3-->q3': { loopDirection: 'bottom' },
+    'q4-->q4': { loopDirection: 'top' },
+    'q5-->q5': { loopDirection: 'top' },
+  },
+  explanationGuide: {
+    title: '3-Way Context-Sensitive Marking Algorithm',
+    steps: [
+      { step: 1, title: 'Mark an "a" → X', desc: 'In state q0, mark leftmost "a" as "X", move right to q1.', iconSymbol: 'X', color: '#2563eb' },
+      { step: 2, title: 'Mark matching "b" → Y', desc: 'In state q1, find first unmarked "b", mark as "Y", and enter q2.', iconSymbol: 'Y', color: '#7c3aed' },
+      { step: 3, title: 'Mark matching "c" → Z', desc: 'In state q2, find first unmarked "c", mark as "Z", then rewind left in q3.', iconSymbol: 'Z', color: '#16a34a' },
+      { step: 4, title: 'Rewind & Verify', desc: 'In state q3, return left to marker "X". Once all "a"s are processed, q4 and q5 verify no leftover symbols remain.', iconSymbol: '✓', color: '#0891b2' },
+    ],
+  },
+  transitions: [
+    { currentState: 'q0', readSymbol: 'a', writeSymbol: 'X', moveDirection: 'R', nextState: 'q1', phaseName: 'MARK_A', description: 'Found "a". Mark as "X" and seek matching "b".' },
+    { currentState: 'q0', readSymbol: 'X', writeSymbol: 'X', moveDirection: 'R', nextState: 'q0', phaseName: 'MARK_A', description: 'Scanning past marked "X".' },
+    { currentState: 'q0', readSymbol: 'Y', writeSymbol: 'Y', moveDirection: 'R', nextState: 'q4', phaseName: 'VERIFY', description: 'All "a"s marked. Switch to state q4 to verify symbols.' },
+    { currentState: 'q0', readSymbol: 'b', writeSymbol: 'b', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Unexpected "b" in q0. Reject.' },
+    { currentState: 'q0', readSymbol: 'c', writeSymbol: 'c', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Unexpected "c" in q0. Reject.' },
+    { currentState: 'q0', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Empty string is rejected.' },
+
+    { currentState: 'q1', readSymbol: 'a', writeSymbol: 'a', moveDirection: 'R', nextState: 'q1', phaseName: 'SEEK_B', description: 'Scanning past "a"s.' },
+    { currentState: 'q1', readSymbol: 'Y', writeSymbol: 'Y', moveDirection: 'R', nextState: 'q1', phaseName: 'SEEK_B', description: 'Scanning past marked "Y"s.' },
+    { currentState: 'q1', readSymbol: 'b', writeSymbol: 'Y', moveDirection: 'R', nextState: 'q2', phaseName: 'SEEK_B', description: 'Found matching "b"! Mark as "Y" and seek "c".' },
+    { currentState: 'q1', readSymbol: 'c', writeSymbol: 'c', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Found "c" before matching "b". Reject.' },
+    { currentState: 'q1', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Missing matching "b". Reject.' },
+
+    { currentState: 'q2', readSymbol: 'b', writeSymbol: 'b', moveDirection: 'R', nextState: 'q2', phaseName: 'SEEK_C', description: 'Scanning past "b"s.' },
+    { currentState: 'q2', readSymbol: 'Z', writeSymbol: 'Z', moveDirection: 'R', nextState: 'q2', phaseName: 'SEEK_C', description: 'Scanning past marked "Z"s.' },
+    { currentState: 'q2', readSymbol: 'c', writeSymbol: 'Z', moveDirection: 'L', nextState: 'q3', phaseName: 'SEEK_C', description: 'Found matching "c"! Mark as "Z" and rewind.' },
+    { currentState: 'q2', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Missing matching "c". Reject.' },
+
+    { currentState: 'q3', readSymbol: 'a', writeSymbol: 'a', moveDirection: 'L', nextState: 'q3', phaseName: 'REWIND', description: 'Rewinding across "a"s.' },
+    { currentState: 'q3', readSymbol: 'b', writeSymbol: 'b', moveDirection: 'L', nextState: 'q3', phaseName: 'REWIND', description: 'Rewinding across "b"s.' },
+    { currentState: 'q3', readSymbol: 'Y', writeSymbol: 'Y', moveDirection: 'L', nextState: 'q3', phaseName: 'REWIND', description: 'Rewinding across "Y"s.' },
+    { currentState: 'q3', readSymbol: 'Z', writeSymbol: 'Z', moveDirection: 'L', nextState: 'q3', phaseName: 'REWIND', description: 'Rewinding across "Z"s.' },
+    { currentState: 'q3', readSymbol: 'X', writeSymbol: 'X', moveDirection: 'R', nextState: 'q0', phaseName: 'REWIND', description: 'Hit "X"! Step right into q0.' },
+
+    { currentState: 'q4', readSymbol: 'Y', writeSymbol: 'Y', moveDirection: 'R', nextState: 'q4', phaseName: 'VERIFY', description: 'Verifying "Y"s.' },
+    { currentState: 'q4', readSymbol: 'Z', writeSymbol: 'Z', moveDirection: 'R', nextState: 'q5', phaseName: 'VERIFY', description: 'Finished "Y"s, verifying "Z"s.' },
+    { currentState: 'q4', readSymbol: 'b', writeSymbol: 'b', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Extra "b" in verification. Reject.' },
+
+    { currentState: 'q5', readSymbol: 'Z', writeSymbol: 'Z', moveDirection: 'R', nextState: 'q5', phaseName: 'VERIFY', description: 'Verifying "Z"s.' },
+    { currentState: 'q5', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'All symbols matched 1-to-1-to-1! ACCEPT ✓' },
+    { currentState: 'q5', readSymbol: 'c', writeSymbol: 'c', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Extra "c" detected. Reject.' },
+  ],
+};
+
+/* ------------------------------------------------------------------
+ * MACHINE 8: STRING COPY (w → w#w)
+ * ------------------------------------------------------------------ */
+export const STRING_COPY_MACHINE: TuringMachineDefinition = {
+  id: 'stringCopy',
+  name: 'String Copy (w → w#w)',
+  category: 'Advanced',
+  description: 'Transducer that duplicates an arbitrary binary input string onto the tape separated by delimiter "#".',
+  formalTitle: 'Transducer: f(w) = w # w (String Duplication)',
+  language: 'f(w) = w # w over Σ = { 0, 1 }',
+  states: ['q0', 'q1', 'q2', 'q3_0', 'q3_1', 'q4', 'q5', 'q_accept', 'q_reject'],
+  inputAlphabet: ['0', '1'],
+  tapeAlphabet: ['0', '1', 'X', 'Y', '#', 'B'],
+  initialState: 'q0',
+  blankSymbol: 'B',
+  acceptStates: ['q_accept'],
+  rejectStates: ['q_reject'],
+  defaultInput: '01',
+  presetInputs: [
+    { label: '01 → 01#01', value: '01', expected: 'ACCEPT', note: '2-bit string' },
+    { label: '101 → 101#101', value: '101', expected: 'ACCEPT', note: '3-bit palindrome' },
+    { label: '11 → 11#11', value: '11', expected: 'ACCEPT', note: 'All ones' },
+    { label: '0 → 0#0', value: '0', expected: 'ACCEPT', note: 'Single bit 0' },
+    { label: '1100 → 1100#1100', value: '1100', expected: 'ACCEPT', note: '4-bit string' },
+  ],
+  algorithmPhases: [
+    { id: 'SELECT', label: 'SELECT & MARK', description: 'Read next symbol and mark with X (for 0) or Y (for 1)', states: ['q0'], color: '#2563eb' },
+    { id: 'CARRY', label: 'CARRY TO COPY', description: 'Travel right past delimiter # to append symbol', states: ['q1', 'q2', 'q3_0', 'q3_1'], color: '#7c3aed' },
+    { id: 'REWIND', label: 'REWIND', description: 'Return left to next unmarked input symbol', states: ['q4'], color: '#d97706' },
+    { id: 'RESTORE', label: 'RESTORE TAPE', description: 'Convert markers X→0 and Y→1 to produce final w#w', states: ['q5'], color: '#16a34a' },
+  ],
+  statePositions: {
+    q0: { x: 120, y: 115, label: 'q0', description: 'Select next bit', role: 'start', color: '#2563eb' },
+    q1: { x: 280, y: 80, label: 'q1', description: 'Carry bit 0', role: 'normal', color: '#7c3aed' },
+    q2: { x: 280, y: 170, label: 'q2', description: 'Carry bit 1', role: 'normal', color: '#0891b2' },
+    q3_0: { x: 470, y: 80, label: 'q3_0', description: 'Append 0', role: 'normal', color: '#7c3aed' },
+    q3_1: { x: 470, y: 170, label: 'q3_1', description: 'Append 1', role: 'normal', color: '#0891b2' },
+    q4: { x: 630, y: 115, label: 'q4', description: 'Rewind left', role: 'normal', color: '#d97706' },
+    q5: { x: 770, y: 115, label: 'q5', description: 'Restore 0,1', role: 'normal', color: '#059669' },
+    q_accept: { x: 880, y: 115, label: 'q_accept', description: 'Copied ✓', role: 'accept', color: '#16a34a' },
+    q_reject: { x: 500, y: 295, label: 'q_reject', description: 'Reject ✕', role: 'reject', color: '#dc2626' },
+  },
+  edgeLayouts: {
+    'q0-->q1': { labelX: 200, labelY: 75, curveOffset: 0 },
+    'q0-->q2': { labelX: 200, labelY: 160, curveOffset: 0 },
+    'q1-->q3_0': { labelX: 375, labelY: 60, curveOffset: 0 },
+    'q2-->q3_1': { labelX: 375, labelY: 190, curveOffset: 0 },
+    'q3_0-->q4': { labelX: 550, labelY: 75, curveOffset: 0 },
+    'q3_1-->q4': { labelX: 550, labelY: 160, curveOffset: 0 },
+    'q4-->q0': { labelX: 375, labelY: 260, curveOffset: 60 },
+    'q0-->q5': { labelX: 450, labelY: 25, curveOffset: 65 },
+    'q5-->q_accept': { labelX: 830, labelY: 82, curveOffset: 0 },
+    'q1-->q1': { loopDirection: 'top' },
+    'q2-->q2': { loopDirection: 'bottom' },
+    'q3_0-->q3_0': { loopDirection: 'top' },
+    'q3_1-->q3_1': { loopDirection: 'bottom' },
+    'q4-->q4': { loopDirection: 'top' },
+    'q5-->q5': { loopDirection: 'top' },
+  },
+  explanationGuide: {
+    title: 'Marker-Based String Duplication Transducer',
+    steps: [
+      { step: 1, title: 'Mark & Carry Symbol', desc: 'Replace current leftmost bit with marker (0→X or 1→Y) and remember value in state (q1 or q2).', iconSymbol: '0/1', color: '#2563eb' },
+      { step: 2, title: 'Append Duplicate to Right', desc: 'Travel right past delimiter # (creating it on first pass) to rightmost blank, and write copied symbol.', iconSymbol: '→#', color: '#7c3aed' },
+      { step: 3, title: 'Rewind to Next Symbol', desc: 'In state q4, return left until hitting marked symbol X/Y, then advance right to next bit.', iconSymbol: '←', color: '#d97706' },
+      { step: 4, title: 'Restore Original String', desc: 'Once all bits are copied, state q5 converts markers X→0 and Y→1 and positions head at MSB.', iconSymbol: '✓', color: '#16a34a' },
+    ],
+  },
+  transitions: [
+    { currentState: 'q0', readSymbol: '0', writeSymbol: 'X', moveDirection: 'R', nextState: 'q1', phaseName: 'SELECT', description: 'Found "0". Mark as "X" and travel right to copy in q1.' },
+    { currentState: 'q0', readSymbol: '1', writeSymbol: 'Y', moveDirection: 'R', nextState: 'q2', phaseName: 'SELECT', description: 'Found "1". Mark as "Y" and travel right to copy in q2.' },
+    { currentState: 'q0', readSymbol: '#', writeSymbol: '#', moveDirection: 'L', nextState: 'q5', phaseName: 'RESTORE', description: 'All characters duplicated. Enter restore phase q5.' },
+    { currentState: 'q0', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'RESTORE', description: 'Empty string copied. ACCEPT.' },
+
+    { currentState: 'q1', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q1', phaseName: 'CARRY', description: 'Scanning past 0.' },
+    { currentState: 'q1', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q1', phaseName: 'CARRY', description: 'Scanning past 1.' },
+    { currentState: 'q1', readSymbol: '#', writeSymbol: '#', moveDirection: 'R', nextState: 'q3_0', phaseName: 'CARRY', description: 'Crossed delimiter #. Seek blank cell in q3_0.' },
+    { currentState: 'q1', readSymbol: 'B', writeSymbol: '#', moveDirection: 'R', nextState: 'q3_0', phaseName: 'CARRY', description: 'First copy pass: write delimiter "#" and advance to q3_0.' },
+
+    { currentState: 'q2', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q2', phaseName: 'CARRY', description: 'Scanning past 0.' },
+    { currentState: 'q2', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q2', phaseName: 'CARRY', description: 'Scanning past 1.' },
+    { currentState: 'q2', readSymbol: '#', writeSymbol: '#', moveDirection: 'R', nextState: 'q3_1', phaseName: 'CARRY', description: 'Crossed delimiter #. Seek blank cell in q3_1.' },
+    { currentState: 'q2', readSymbol: 'B', writeSymbol: '#', moveDirection: 'R', nextState: 'q3_1', phaseName: 'CARRY', description: 'First copy pass: write delimiter "#" and advance to q3_1.' },
+
+    { currentState: 'q3_0', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q3_0', phaseName: 'CARRY', description: 'Scanning past copied 0.' },
+    { currentState: 'q3_0', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q3_0', phaseName: 'CARRY', description: 'Scanning past copied 1.' },
+    { currentState: 'q3_0', readSymbol: 'B', writeSymbol: '0', moveDirection: 'L', nextState: 'q4', phaseName: 'REWIND', description: 'Appended "0"! Rewind left in state q4.' },
+
+    { currentState: 'q3_1', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q3_1', phaseName: 'CARRY', description: 'Scanning past copied 0.' },
+    { currentState: 'q3_1', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q3_1', phaseName: 'CARRY', description: 'Scanning past copied 1.' },
+    { currentState: 'q3_1', readSymbol: 'B', writeSymbol: '1', moveDirection: 'L', nextState: 'q4', phaseName: 'REWIND', description: 'Appended "1"! Rewind left in state q4.' },
+
+    { currentState: 'q4', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q4', phaseName: 'REWIND', description: 'Rewinding left across 0.' },
+    { currentState: 'q4', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q4', phaseName: 'REWIND', description: 'Rewinding left across 1.' },
+    { currentState: 'q4', readSymbol: '#', writeSymbol: '#', moveDirection: 'L', nextState: 'q4', phaseName: 'REWIND', description: 'Rewinding left across #.' },
+    { currentState: 'q4', readSymbol: 'X', writeSymbol: 'X', moveDirection: 'R', nextState: 'q0', phaseName: 'SELECT', description: 'Found marker X. Step right into q0 for next symbol.' },
+    { currentState: 'q4', readSymbol: 'Y', writeSymbol: 'Y', moveDirection: 'R', nextState: 'q0', phaseName: 'SELECT', description: 'Found marker Y. Step right into q0 for next symbol.' },
+    { currentState: 'q4', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q0', phaseName: 'SELECT', description: 'Reached left blank boundary. Step right into q0.' },
+
+    { currentState: 'q5', readSymbol: 'X', writeSymbol: '0', moveDirection: 'L', nextState: 'q5', phaseName: 'RESTORE', description: 'Restoring marker X → 0.' },
+    { currentState: 'q5', readSymbol: 'Y', writeSymbol: '1', moveDirection: 'L', nextState: 'q5', phaseName: 'RESTORE', description: 'Restoring marker Y → 1.' },
+    { currentState: 'q5', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q5', phaseName: 'RESTORE', description: 'Rewinding past 0.' },
+    { currentState: 'q5', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q5', phaseName: 'RESTORE', description: 'Rewinding past 1.' },
+    { currentState: 'q5', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'RESTORE', description: 'Duplication complete! Head positioned at start of w#w. ACCEPT ✓' },
+  ],
+};
+
+/* ------------------------------------------------------------------
+ * MACHINE 9: BINARY ADDITION (A + B)
+ * ------------------------------------------------------------------ */
+export const BINARY_ADDITION_MACHINE: TuringMachineDefinition = {
+  id: 'binaryAddition',
+  name: 'Binary Addition (A + B)',
+  category: 'Advanced',
+  description: 'Transducer that computes the sum of two binary numbers formatted as "A#B" on the tape.',
+  formalTitle: 'Transducer: f(a # b) = a + b (Binary Column Addition)',
+  language: 'f(a # b) = a + b over Σ = { 0, 1, # }',
+  states: ['q0', 'q1', 'q2', 'q3', 'q4', 'q_rewind_accept', 'q_accept', 'q_reject'],
+  inputAlphabet: ['0', '1', '#'],
+  tapeAlphabet: ['0', '1', '#', 'B'],
+  initialState: 'q0',
+  blankSymbol: 'B',
+  acceptStates: ['q_accept'],
+  rejectStates: ['q_reject'],
+  defaultInput: '10#11',
+  presetInputs: [
+    { label: '10#11 → 101 (2+3=5)', value: '10#11', expected: 'ACCEPT', note: '2 + 3 = 5' },
+    { label: '11#01 → 100 (3+1=4)', value: '11#01', expected: 'ACCEPT', note: '3 + 1 = 4 with carry' },
+    { label: '10#01 → 11 (2+1=3)', value: '10#01', expected: 'ACCEPT', note: '2 + 1 = 3' },
+    { label: '0#1 → 1 (0+1=1)', value: '0#1', expected: 'ACCEPT', note: '0 + 1 = 1' },
+    { label: '11#11 → 110 (3+3=6)', value: '11#11', expected: 'ACCEPT', note: '3 + 3 = 6' },
+  ],
+  algorithmPhases: [
+    { id: 'SCAN_B', label: 'LOCATE B', description: 'Scan right past # to find least significant bit of B', states: ['q0'], color: '#2563eb' },
+    { id: 'DEC_B', label: 'DECREMENT B', description: 'Subtract 1 from B until B reaches 0', states: ['q1', 'q2'], color: '#7c3aed' },
+    { id: 'INC_A', label: 'INCREMENT A', description: 'Add 1 to A with carry propagation', states: ['q3', 'q4'], color: '#0891b2' },
+    { id: 'HALT', label: 'ACCEPT', description: 'Rewind head to MSB of result A+B and accept', states: ['q_rewind_accept', 'q_accept'], color: '#16a34a' },
+  ],
+  statePositions: {
+    q0: { x: 120, y: 115, label: 'q0', description: 'Scan to B end', role: 'start', color: '#2563eb' },
+    q1: { x: 280, y: 115, label: 'q1', description: 'Check B zero', role: 'normal', color: '#7c3aed' },
+    q2: { x: 440, y: 115, label: 'q2', description: 'Dec B & seek #', role: 'normal', color: '#7c3aed' },
+    q3: { x: 600, y: 115, label: 'q3', description: 'Add 1 to A', role: 'normal', color: '#0891b2' },
+    q4: { x: 740, y: 115, label: 'q4', description: 'Return to B', role: 'normal', color: '#0284c7' },
+    q_rewind_accept: { x: 280, y: 240, label: 'q_rew', description: 'Rewind MSB', role: 'normal', color: '#059669' },
+    q_accept: { x: 860, y: 115, label: 'q_accept', description: 'Sum Done ✓', role: 'accept', color: '#16a34a' },
+    q_reject: { x: 600, y: 295, label: 'q_reject', description: 'Reject ✕', role: 'reject', color: '#dc2626' },
+  },
+  edgeLayouts: {
+    'q0-->q1': { labelX: 200, labelY: 82, curveOffset: 0 },
+    'q1-->q2': { labelX: 360, labelY: 82, curveOffset: 0 },
+    'q2-->q3': { labelX: 520, labelY: 82, curveOffset: 0 },
+    'q3-->q4': { labelX: 670, labelY: 82, curveOffset: 0 },
+    'q4-->q0': { labelX: 430, labelY: 25, curveOffset: 60 },
+    'q1-->q_rewind_accept': { labelX: 280, labelY: 175, curveOffset: 0 },
+    'q_rewind_accept-->q_accept': { labelX: 570, labelY: 230, curveOffset: -25 },
+    'q0-->q0': { loopDirection: 'top' },
+    'q1-->q1': { loopDirection: 'top' },
+    'q2-->q2': { loopDirection: 'top' },
+    'q3-->q3': { loopDirection: 'top' },
+    'q4-->q4': { loopDirection: 'top' },
+    'q_rewind_accept-->q_rewind_accept': { loopDirection: 'bottom' },
+  },
+  explanationGuide: {
+    title: 'Binary Accumulator Addition Algorithm',
+    steps: [
+      { step: 1, title: 'Locate Rightmost Bit of B', desc: 'Scan tape right past delimiter "#" until reaching blank B, then step left into B.', iconSymbol: '→#', color: '#2563eb' },
+      { step: 2, title: 'Decrement B by 1', desc: 'Subtract 1 from B. If B is already completely 0, erase "#" and finish.', iconSymbol: 'B-1', color: '#7c3aed' },
+      { step: 3, title: 'Increment A by 1 (Carry)', desc: 'Move left into A and increment A with binary carry propagation.', iconSymbol: 'A+1', color: '#0891b2' },
+      { step: 4, title: 'Repeat until Sum Complete', desc: 'Repeat cycle until B is exhausted, leaving the binary sum A+B on tape.', iconSymbol: '✓', color: '#16a34a' },
+    ],
+  },
+  transitions: [
+    { currentState: 'q0', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q0', phaseName: 'SCAN_B', description: 'Scanning right across 0.' },
+    { currentState: 'q0', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q0', phaseName: 'SCAN_B', description: 'Scanning right across 1.' },
+    { currentState: 'q0', readSymbol: '#', writeSymbol: '#', moveDirection: 'R', nextState: 'q0', phaseName: 'SCAN_B', description: 'Scanning right across #.' },
+    { currentState: 'q0', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'L', nextState: 'q1', phaseName: 'DEC_B', description: 'Reached end of B. Step left into q1.' },
+
+    { currentState: 'q1', readSymbol: '0', writeSymbol: 'B', moveDirection: 'L', nextState: 'q1', phaseName: 'DEC_B', description: 'Trailing 0 of B cleared to blank.' },
+    { currentState: 'q1', readSymbol: '1', writeSymbol: '0', moveDirection: 'L', nextState: 'q2', phaseName: 'DEC_B', description: 'Decremented bit 1 → 0 in B. Travel left to increment A.' },
+    { currentState: 'q1', readSymbol: '#', writeSymbol: 'B', moveDirection: 'L', nextState: 'q_rewind_accept', phaseName: 'HALT', description: 'B is fully zeroed! Erase "#" and rewind to accept.' },
+
+    { currentState: 'q2', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q2', phaseName: 'DEC_B', description: 'Traveling left across 0 in B.' },
+    { currentState: 'q2', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q2', phaseName: 'DEC_B', description: 'Traveling left across 1 in B.' },
+    { currentState: 'q2', readSymbol: '#', writeSymbol: '#', moveDirection: 'L', nextState: 'q3', phaseName: 'INC_A', description: 'Crossed # into A. Increment A in q3.' },
+
+    { currentState: 'q3', readSymbol: '0', writeSymbol: '1', moveDirection: 'R', nextState: 'q4', phaseName: 'INC_A', description: '0 + 1 = 1 with no carry. Addition step complete.' },
+    { currentState: 'q3', readSymbol: '1', writeSymbol: '0', moveDirection: 'L', nextState: 'q3', phaseName: 'INC_A', description: '1 + 1 = 0 with carry left.' },
+    { currentState: 'q3', readSymbol: 'B', writeSymbol: '1', moveDirection: 'R', nextState: 'q4', phaseName: 'INC_A', description: 'Carry overflow! Write 1 at front.' },
+
+    { currentState: 'q4', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q4', phaseName: 'INC_A', description: 'Advancing right across A.' },
+    { currentState: 'q4', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q4', phaseName: 'INC_A', description: 'Advancing right across A.' },
+    { currentState: 'q4', readSymbol: '#', writeSymbol: '#', moveDirection: 'R', nextState: 'q0', phaseName: 'SCAN_B', description: 'Crossed # back to B to repeat cycle.' },
+
+    { currentState: 'q_rewind_accept', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q_rewind_accept', phaseName: 'HALT', description: 'Rewinding left across sum.' },
+    { currentState: 'q_rewind_accept', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q_rewind_accept', phaseName: 'HALT', description: 'Rewinding left across sum.' },
+    { currentState: 'q_rewind_accept', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'HALT', description: 'Position head at MSB of sum A+B! ACCEPT ✓' },
+  ],
+};
+
+/* ------------------------------------------------------------------
+ * MACHINE 10: BINARY SUBTRACTION (A - B)
+ * ------------------------------------------------------------------ */
+export const BINARY_SUBTRACTION_MACHINE: TuringMachineDefinition = {
+  id: 'binarySubtraction',
+  name: 'Binary Subtraction (A - B)',
+  category: 'Advanced',
+  description: 'Transducer that computes binary subtraction A - B for non-negative result (A ≥ B) with borrow propagation.',
+  formalTitle: 'Transducer: f(a # b) = a - b (for a ≥ b)',
+  language: 'f(a # b) = a - b over Σ = { 0, 1, # }',
+  states: ['q0', 'q1', 'q2', 'q3', 'q4', 'q_rewind_accept', 'q_accept', 'q_reject'],
+  inputAlphabet: ['0', '1', '#'],
+  tapeAlphabet: ['0', '1', '#', 'B'],
+  initialState: 'q0',
+  blankSymbol: 'B',
+  acceptStates: ['q_accept'],
+  rejectStates: ['q_reject'],
+  defaultInput: '11#01',
+  presetInputs: [
+    { label: '11#01 → 10 (3-1=2)', value: '11#01', expected: 'ACCEPT', note: '3 - 1 = 2' },
+    { label: '100#01 → 11 (4-1=3)', value: '100#01', expected: 'ACCEPT', note: '4 - 1 = 3 with borrow' },
+    { label: '11#11 → 00 (3-3=0)', value: '11#11', expected: 'ACCEPT', note: '3 - 3 = 0' },
+    { label: '10#10 → 00 (2-2=0)', value: '10#10', expected: 'ACCEPT', note: '2 - 2 = 0' },
+    { label: '01#10 (1-2 < 0)', value: '01#10', expected: 'REJECT', note: 'Underflow (A < B)' },
+  ],
+  algorithmPhases: [
+    { id: 'SCAN_B', label: 'LOCATE B', description: 'Scan to rightmost bit of subtrahend B', states: ['q0'], color: '#2563eb' },
+    { id: 'DEC_B', label: 'DECREMENT B', description: 'Subtract 1 from B until B is exhausted', states: ['q1', 'q2'], color: '#7c3aed' },
+    { id: 'DEC_A', label: 'DECREMENT A', description: 'Subtract 1 from A with borrow propagation', states: ['q3', 'q4'], color: '#0891b2' },
+    { id: 'HALT', label: 'ACCEPT', description: 'Position head at MSB of difference A-B', states: ['q_rewind_accept', 'q_accept'], color: '#16a34a' },
+  ],
+  statePositions: {
+    q0: { x: 120, y: 115, label: 'q0', description: 'Scan to B end', role: 'start', color: '#2563eb' },
+    q1: { x: 280, y: 115, label: 'q1', description: 'Check B zero', role: 'normal', color: '#7c3aed' },
+    q2: { x: 440, y: 115, label: 'q2', description: 'Seek # left', role: 'normal', color: '#7c3aed' },
+    q3: { x: 600, y: 115, label: 'q3', description: 'Dec A & Borrow', role: 'normal', color: '#0891b2' },
+    q4: { x: 740, y: 115, label: 'q4', description: 'Return to B', role: 'normal', color: '#0284c7' },
+    q_rewind_accept: { x: 280, y: 240, label: 'q_rew', description: 'Rewind MSB', role: 'normal', color: '#059669' },
+    q_accept: { x: 860, y: 115, label: 'q_accept', description: 'Diff Done ✓', role: 'accept', color: '#16a34a' },
+    q_reject: { x: 600, y: 295, label: 'q_reject', description: 'Underflow ✕', role: 'reject', color: '#dc2626' },
+  },
+  edgeLayouts: {
+    'q0-->q1': { labelX: 200, labelY: 82, curveOffset: 0 },
+    'q1-->q2': { labelX: 360, labelY: 82, curveOffset: 0 },
+    'q2-->q3': { labelX: 520, labelY: 82, curveOffset: 0 },
+    'q3-->q4': { labelX: 670, labelY: 82, curveOffset: 0 },
+    'q4-->q0': { labelX: 430, labelY: 25, curveOffset: 60 },
+    'q1-->q_rewind_accept': { labelX: 280, labelY: 175, curveOffset: 0 },
+    'q_rewind_accept-->q_accept': { labelX: 570, labelY: 230, curveOffset: -25 },
+    'q0-->q0': { loopDirection: 'top' },
+    'q1-->q1': { loopDirection: 'top' },
+    'q2-->q2': { loopDirection: 'top' },
+    'q3-->q3': { loopDirection: 'top' },
+    'q4-->q4': { loopDirection: 'top' },
+    'q_rewind_accept-->q_rewind_accept': { loopDirection: 'bottom' },
+  },
+  explanationGuide: {
+    title: 'Binary Subtraction with Borrow Algorithm',
+    steps: [
+      { step: 1, title: 'Locate Rightmost Bit of B', desc: 'Scan tape right past delimiter "#" to the least significant bit of B.', iconSymbol: '→#', color: '#2563eb' },
+      { step: 2, title: 'Decrement B by 1', desc: 'Subtract 1 from B. If B is already 0, erase delimiter "#" and finish.', iconSymbol: 'B-1', color: '#7c3aed' },
+      { step: 3, title: 'Decrement A by 1 (Borrow)', desc: 'Move left into A and subtract 1 with borrow propagation. If underflow occurs (A < B), reject.', iconSymbol: 'A-1', color: '#0891b2' },
+      { step: 4, title: 'Repeat until Subtraction Complete', desc: 'Repeat cycle until B is exhausted, leaving difference A-B on tape.', iconSymbol: '✓', color: '#16a34a' },
+    ],
+  },
+  transitions: [
+    { currentState: 'q0', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q0', phaseName: 'SCAN_B', description: 'Scanning right across 0.' },
+    { currentState: 'q0', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q0', phaseName: 'SCAN_B', description: 'Scanning right across 1.' },
+    { currentState: 'q0', readSymbol: '#', writeSymbol: '#', moveDirection: 'R', nextState: 'q0', phaseName: 'SCAN_B', description: 'Scanning right across #.' },
+    { currentState: 'q0', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'L', nextState: 'q1', phaseName: 'DEC_B', description: 'Reached end of B. Step left into q1.' },
+
+    { currentState: 'q1', readSymbol: '0', writeSymbol: 'B', moveDirection: 'L', nextState: 'q1', phaseName: 'DEC_B', description: 'Trailing 0 of B cleared.' },
+    { currentState: 'q1', readSymbol: '1', writeSymbol: '0', moveDirection: 'L', nextState: 'q2', phaseName: 'DEC_B', description: 'Decremented bit 1 → 0 in B. Travel left to decrement A.' },
+    { currentState: 'q1', readSymbol: '#', writeSymbol: 'B', moveDirection: 'L', nextState: 'q_rewind_accept', phaseName: 'HALT', description: 'B is fully zeroed! Erase "#" and rewind to accept.' },
+
+    { currentState: 'q2', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q2', phaseName: 'DEC_B', description: 'Traveling left across 0 in B.' },
+    { currentState: 'q2', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q2', phaseName: 'DEC_B', description: 'Traveling left across 1 in B.' },
+    { currentState: 'q2', readSymbol: '#', writeSymbol: '#', moveDirection: 'L', nextState: 'q3', phaseName: 'DEC_A', description: 'Crossed # into A. Decrement A in q3.' },
+
+    { currentState: 'q3', readSymbol: '1', writeSymbol: '0', moveDirection: 'R', nextState: 'q4', phaseName: 'DEC_A', description: '1 - 1 = 0 with no borrow. Step complete.' },
+    { currentState: 'q3', readSymbol: '0', writeSymbol: '1', moveDirection: 'L', nextState: 'q3', phaseName: 'DEC_A', description: '0 - 1 = 1 with borrow left.' },
+    { currentState: 'q3', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Underflow detected: A < B. Cannot compute negative result. Reject.' },
+
+    { currentState: 'q4', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q4', phaseName: 'DEC_A', description: 'Advancing right across A.' },
+    { currentState: 'q4', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q4', phaseName: 'DEC_A', description: 'Advancing right across A.' },
+    { currentState: 'q4', readSymbol: '#', writeSymbol: '#', moveDirection: 'R', nextState: 'q0', phaseName: 'SCAN_B', description: 'Crossed # back to B to repeat cycle.' },
+
+    { currentState: 'q_rewind_accept', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q_rewind_accept', phaseName: 'HALT', description: 'Rewinding left across difference.' },
+    { currentState: 'q_rewind_accept', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q_rewind_accept', phaseName: 'HALT', description: 'Rewinding left across difference.' },
+    { currentState: 'q_rewind_accept', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'HALT', description: 'Position head at MSB of difference A-B! ACCEPT ✓' },
+  ],
+};
+
+/* ------------------------------------------------------------------
+ * MACHINE 11: 1's COMPLEMENT
+ * ------------------------------------------------------------------ */
+export const ONES_COMPLEMENT_MACHINE: TuringMachineDefinition = {
+  id: 'onesComplement',
+  name: "1's Complement Transducer",
+  category: 'Basic',
+  description: "Turing Machine transducer that computes the 1's complement of an arbitrary binary string by flipping every bit (0 ↔ 1).",
+  formalTitle: "Transducer: f(w) = 1's Complement of w",
+  language: "f(w) = w̄ (Bitwise NOT in base 2)",
+  states: ['q0', 'q1', 'q_accept', 'q_reject'],
+  inputAlphabet: ['0', '1'],
+  tapeAlphabet: ['0', '1', 'B'],
+  initialState: 'q0',
+  blankSymbol: 'B',
+  acceptStates: ['q_accept'],
+  rejectStates: ['q_reject'],
+  defaultInput: '1011',
+  presetInputs: [
+    { label: '1011 → 0100', value: '1011', expected: 'ACCEPT', note: 'Bit inversion' },
+    { label: '1100 → 0011', value: '1100', expected: 'ACCEPT', note: 'All bits flipped' },
+    { label: '0 → 1', value: '0', expected: 'ACCEPT', note: 'Single bit 0' },
+    { label: '1 → 0', value: '1', expected: 'ACCEPT', note: 'Single bit 1' },
+    { label: '101010 → 010101', value: '101010', expected: 'ACCEPT', note: 'Alternating bits' },
+  ],
+  algorithmPhases: [
+    { id: 'INVERT', label: 'BITWISE INVERSION', description: 'Scan right replacing 0 with 1 and 1 with 0', states: ['q0'], color: '#2563eb' },
+    { id: 'REWIND', label: 'REWIND TO MSB', description: 'Return tape head left to most significant bit', states: ['q1'], color: '#7c3aed' },
+    { id: 'ACCEPT', label: 'COMPLETED', description: 'Position head at start and halt in accept state', states: ['q_accept'], color: '#16a34a' },
+  ],
+  statePositions: {
+    q0: { x: 180, y: 140, label: 'q0', description: 'Flip bits (0↔1)', role: 'start', color: '#2563eb' },
+    q1: { x: 460, y: 140, label: 'q1', description: 'Rewind left', role: 'normal', color: '#7c3aed' },
+    q_accept: { x: 740, y: 140, label: 'q_accept', description: 'Done ✓', role: 'accept', color: '#16a34a' },
+    q_reject: { x: 460, y: 260, label: 'q_reject', description: 'Reject ✕', role: 'reject', color: '#dc2626' },
+  },
+  edgeLayouts: {
+    'q0-->q0': { loopDirection: 'top' },
+    'q0-->q1': { labelX: 320, labelY: 115, curveOffset: 0 },
+    'q1-->q1': { loopDirection: 'top' },
+    'q1-->q_accept': { labelX: 600, labelY: 115, curveOffset: 0 },
+  },
+  explanationGuide: {
+    title: "1's Complement Bitwise Inversion",
+    steps: [
+      { step: 1, title: 'Invert Every Bit', desc: 'In state q0, scan left-to-right replacing every 0 with 1, and every 1 with 0.', iconSymbol: '0↔1', color: '#2563eb' },
+      { step: 2, title: 'Locate End of String', desc: 'Upon reading the trailing blank B, step one cell left to enter rewind state q1.', iconSymbol: '←', color: '#7c3aed' },
+      { step: 3, title: 'Rewind & Halt', desc: 'Rewind left to the beginning blank boundary and halt at the most significant bit.', iconSymbol: '✓', color: '#16a34a' },
+    ],
+  },
+  transitions: [
+    { currentState: 'q0', readSymbol: '0', writeSymbol: '1', moveDirection: 'R', nextState: 'q0', phaseName: 'INVERT', description: 'Bit 0 → Inverted to 1. Move right.' },
+    { currentState: 'q0', readSymbol: '1', writeSymbol: '0', moveDirection: 'R', nextState: 'q0', phaseName: 'INVERT', description: 'Bit 1 → Inverted to 0. Move right.' },
+    { currentState: 'q0', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'L', nextState: 'q1', phaseName: 'REWIND', description: 'Reached right blank boundary. Step left to rewind in q1.' },
+
+    { currentState: 'q1', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q1', phaseName: 'REWIND', description: 'Rewinding left across 0.' },
+    { currentState: 'q1', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q1', phaseName: 'REWIND', description: 'Rewinding left across 1.' },
+    { currentState: 'q1', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'Hit left blank boundary. Position head at MSB and accept ✓' },
+  ],
+};
+
+/* ------------------------------------------------------------------
+ * MACHINE 12: 2's COMPLEMENT
+ * ------------------------------------------------------------------ */
+export const TWOS_COMPLEMENT_MACHINE: TuringMachineDefinition = {
+  id: 'twosComplement',
+  name: "2's Complement Transducer",
+  category: 'Basic',
+  description: "Turing Machine transducer that computes the 2's complement of a binary number (f(w) = -w in 2's complement).",
+  formalTitle: "Transducer: f(w) = 2's Complement of w",
+  language: "f(w) = 2's Complement of w (Base 2)",
+  states: ['q0', 'q1', 'q2', 'q_accept', 'q_reject'],
+  inputAlphabet: ['0', '1'],
+  tapeAlphabet: ['0', '1', 'B'],
+  initialState: 'q0',
+  blankSymbol: 'B',
+  acceptStates: ['q_accept'],
+  rejectStates: ['q_reject'],
+  defaultInput: '1100',
+  presetInputs: [
+    { label: '1100 → 0100', value: '1100', expected: 'ACCEPT', note: '12 → 4 in 4-bit' },
+    { label: '1011 → 0101', value: '1011', expected: 'ACCEPT', note: '11 → 5 in 4-bit' },
+    { label: '1010 → 0110', value: '1010', expected: 'ACCEPT', note: '10 → 6 in 4-bit' },
+    { label: '1000 → 1000', value: '1000', expected: 'ACCEPT', note: '8 → 8 (MSB boundary)' },
+    { label: '1111 → 0001', value: '1111', expected: 'ACCEPT', note: 'All ones' },
+    { label: '0000 → 0000', value: '0000', expected: 'ACCEPT', note: 'All zeros' },
+  ],
+  algorithmPhases: [
+    { id: 'SEEK_LSB', label: 'SEEK LSB', description: 'Scan right to find least significant bit', states: ['q0'], color: '#2563eb' },
+    { id: 'SCAN_TRAILING', label: 'PRESERVE TRAILING', description: 'Keep trailing 0s and first 1 unchanged', states: ['q1'], color: '#7c3aed' },
+    { id: 'INVERT_PREFIX', label: 'INVERT PREFIX', description: 'Flip all bits left of the first 1 (0 ↔ 1)', states: ['q2'], color: '#0891b2' },
+    { id: 'ACCEPT', label: 'COMPLETED', description: 'Position head at MSB and accept', states: ['q_accept'], color: '#16a34a' },
+  ],
+  statePositions: {
+    q0: { x: 140, y: 140, label: 'q0', description: 'Scan to LSB', role: 'start', color: '#2563eb' },
+    q1: { x: 380, y: 140, label: 'q1', description: 'Keep 0s & 1st 1', role: 'normal', color: '#7c3aed' },
+    q2: { x: 620, y: 140, label: 'q2', description: 'Invert rest (0↔1)', role: 'normal', color: '#0891b2' },
+    q_accept: { x: 840, y: 140, label: 'q_accept', description: 'Done ✓', role: 'accept', color: '#16a34a' },
+    q_reject: { x: 380, y: 260, label: 'q_reject', description: 'Reject ✕', role: 'reject', color: '#dc2626' },
+  },
+  edgeLayouts: {
+    'q0-->q0': { loopDirection: 'top' },
+    'q0-->q1': { labelX: 260, labelY: 115, curveOffset: 0 },
+    'q1-->q1': { loopDirection: 'top' },
+    'q1-->q2': { labelX: 500, labelY: 115, curveOffset: 0 },
+    'q1-->q_accept': { labelX: 610, labelY: 50, curveOffset: -30 },
+    'q2-->q2': { loopDirection: 'top' },
+    'q2-->q_accept': { labelX: 730, labelY: 115, curveOffset: 0 },
+  },
+  explanationGuide: {
+    title: "2's Complement Direct Scan Algorithm",
+    steps: [
+      { step: 1, title: 'Locate LSB (Rightmost Bit)', desc: 'Scan tape right in state q0 until reaching trailing blank B, then step left into q1.', iconSymbol: '→', color: '#2563eb' },
+      { step: 2, title: 'Preserve Trailing 0s & First 1', desc: 'In state q1, moving left: keep all trailing 0s unchanged. When the first 1 is encountered, leave it as 1 and enter state q2.', iconSymbol: '0*1', color: '#7c3aed' },
+      { step: 3, title: 'Invert Remaining Bits', desc: 'In state q2, invert every remaining bit to the left (flip 0 to 1 and 1 to 0) until reaching left blank B.', iconSymbol: '0↔1', color: '#0891b2' },
+      { step: 4, title: 'Reposition Head & Accept', desc: 'Hit left blank boundary, position head at most significant bit, and accept.', iconSymbol: '✓', color: '#16a34a' },
+    ],
+  },
+  transitions: [
+    { currentState: 'q0', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q0', phaseName: 'SEEK_LSB', description: 'Scanning right past 0.' },
+    { currentState: 'q0', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q0', phaseName: 'SEEK_LSB', description: 'Scanning right past 1.' },
+    { currentState: 'q0', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'L', nextState: 'q1', phaseName: 'SCAN_TRAILING', description: 'Found right end of number. Step left to begin 2\'s complement scan in q1.' },
+
+    { currentState: 'q1', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q1', phaseName: 'SCAN_TRAILING', description: 'Trailing 0 preserved unchanged. Move left.' },
+    { currentState: 'q1', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q2', phaseName: 'INVERT_PREFIX', description: 'First 1 preserved! Transition to state q2 to invert all remaining left bits.' },
+    { currentState: 'q1', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'All-zeros string. Position head at MSB and accept ✓' },
+
+    { currentState: 'q2', readSymbol: '0', writeSymbol: '1', moveDirection: 'L', nextState: 'q2', phaseName: 'INVERT_PREFIX', description: 'Prefix bit 0 → Inverted to 1. Move left.' },
+    { currentState: 'q2', readSymbol: '1', writeSymbol: '0', moveDirection: 'L', nextState: 'q2', phaseName: 'INVERT_PREFIX', description: 'Prefix bit 1 → Inverted to 0. Move left.' },
+    { currentState: 'q2', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'Hit left blank boundary! Position head at MSB. 2\'s complement complete ✓' },
+  ],
+};
+
+/* ------------------------------------------------------------------
+ * MACHINE 13: Unary to Binary Converter (1ⁿ → bin(n))
+ * ------------------------------------------------------------------ */
+export const UNARY_TO_BINARY_MACHINE: TuringMachineDefinition = {
+  id: 'unaryToBinary',
+  name: 'Unary to Binary Converter',
+  category: 'Advanced',
+  description: 'Transducer that computes f(1ⁿ) = bin(n). Converts a sequence of unary 1s into its exact standard binary representation.',
+  formalTitle: 'Transducer: Unary to Binary Conversion f(1ⁿ) = bin(n)',
+  language: 'f(1ⁿ) = bin(n) (Base 1 → Base 2)',
+  states: [
+    'q0', 'q1', 'q2', 'q3_init', 'q4_rewind', 'q5_rewind_unary',
+    'q6_seek_msb', 'q7_read_msb', 'q8_carry_0', 'q9_carry_1',
+    'q10_seek_leftmost_x', 'q10_place_0', 'q10_seek_leftmost_x_for_1', 'q10_place_1',
+    'q6_seek_msb_after_place', 'q11_cleanup', 'q12_rewind_to_start',
+    'q_accept', 'q_reject',
+  ],
+  inputAlphabet: ['1'],
+  tapeAlphabet: ['1', '0', 'X', '#', 'B'],
+  initialState: 'q0',
+  blankSymbol: 'B',
+  acceptStates: ['q_accept'],
+  rejectStates: ['q_reject'],
+  defaultInput: '11111',
+  presetInputs: [
+    { label: '1 (1₁₀ → 1₂)', value: '1', expected: 'ACCEPT', note: 'Unary 1 → Binary 1' },
+    { label: '11 (2₁₀ → 10₂)', value: '11', expected: 'ACCEPT', note: 'Unary 2 → Binary 10' },
+    { label: '111 (3₁₀ → 11₂)', value: '111', expected: 'ACCEPT', note: 'Unary 3 → Binary 11' },
+    { label: '1111 (4₁₀ → 100₂)', value: '1111', expected: 'ACCEPT', note: 'Unary 4 → Binary 100' },
+    { label: '11111 (5₁₀ → 101₂)', value: '11111', expected: 'ACCEPT', note: 'Unary 5 → Binary 101' },
+    { label: '111111 (6₁₀ → 110₂)', value: '111111', expected: 'ACCEPT', note: 'Unary 6 → Binary 110' },
+    { label: '1111111 (7₁₀ → 111₂)', value: '1111111', expected: 'ACCEPT', note: 'Unary 7 → Binary 111' },
+    { label: '11111111 (8₁₀ → 1000₂)', value: '11111111', expected: 'ACCEPT', note: 'Unary 8 → Binary 1000' },
+  ],
+  algorithmPhases: [
+    { id: 'COUNT_UNARY', label: 'UNARY SCAN', description: 'Mark unary 1 with X and navigate to binary counter', states: ['q0'], color: '#2563eb' },
+    { id: 'SEEK_COUNTER', label: 'SEEK COUNTER', description: 'Advance past unary digits to # delimiter', states: ['q1'], color: '#7c3aed' },
+    { id: 'INIT_COUNTER', label: 'INIT COUNTER', description: 'Place initial # and first binary bit 1', states: ['q3_init'], color: '#059669' },
+    { id: 'INC_BINARY', label: 'INC COUNTER', description: 'Increment binary counter with carry propagation', states: ['q2'], color: '#0891b2' },
+    { id: 'REWIND', label: 'REWIND', description: 'Rewind left to next unmarked unary 1', states: ['q4_rewind', 'q5_rewind_unary'], color: '#d97706' },
+    { id: 'SEEK_MSB', label: 'SEEK MSB', description: 'Locate MSB at end of reverse binary counter', states: ['q6_seek_msb', 'q6_seek_msb_after_place'], color: '#7c3aed' },
+    { id: 'FETCH_BIT', label: 'FETCH BIT', description: 'Fetch and erase highest remaining binary bit', states: ['q7_read_msb'], color: '#2563eb' },
+    { id: 'CARRY_BIT', label: 'CARRY BIT', description: 'Carry bit left across delimiter # to start of tape', states: ['q8_carry_0', 'q9_carry_1', 'q10_seek_leftmost_x', 'q10_seek_leftmost_x_for_1'], color: '#0891b2' },
+    { id: 'PLACE_BIT', label: 'PLACE BIT', description: 'Place bit into leftmost available cell', states: ['q10_place_0', 'q10_place_1'], color: '#059669' },
+    { id: 'CLEANUP', label: 'CLEANUP', description: 'Erase delimiter # and remaining X markers', states: ['q11_cleanup'], color: '#ea580c' },
+    { id: 'ACCEPT', label: 'ACCEPT', description: 'Position head at MSB and accept', states: ['q12_rewind_to_start', 'q_accept'], color: '#16a34a' },
+  ],
+  statePositions: {
+    q0: { x: 80, y: 140, label: 'q0', description: 'Find next 1', role: 'start', color: '#2563eb' },
+    q1: { x: 260, y: 140, label: 'q1', description: 'Seek # / B', role: 'normal', color: '#7c3aed' },
+    q2: { x: 440, y: 140, label: 'q2', description: 'Inc Bin (LSB)', role: 'normal', color: '#0891b2' },
+    q3_init: { x: 260, y: 260, label: 'q3_init', description: 'Init bin 1', role: 'normal', color: '#059669' },
+    q4_rewind: { x: 440, y: 260, label: 'q4_rewind', description: 'Rewind past #', role: 'normal', color: '#d97706' },
+    q5_rewind_unary: { x: 80, y: 260, label: 'q5_rewind_unary', description: 'Rewind to X', role: 'normal', color: '#ea580c' },
+    q6_seek_msb: { x: 620, y: 140, label: 'q6_seek_msb', description: 'Seek right bit', role: 'normal', color: '#7c3aed' },
+    q7_read_msb: { x: 800, y: 140, label: 'q7_read_msb', description: 'Fetch bit/done', role: 'normal', color: '#2563eb' },
+    q8_carry_0: { x: 620, y: 260, label: 'q8_carry_0', description: 'Carry bit 0', role: 'normal', color: '#0891b2' },
+    q9_carry_1: { x: 800, y: 260, label: 'q9_carry_1', description: 'Carry bit 1', role: 'normal', color: '#0891b2' },
+    q10_seek_leftmost_x: { x: 620, y: 380, label: 'q10_seek_x0', description: 'Rewind for 0', role: 'normal', color: '#d97706' },
+    q10_place_0: { x: 440, y: 380, label: 'q10_place_0', description: 'Place bit 0', role: 'normal', color: '#059669' },
+    q10_seek_leftmost_x_for_1: { x: 800, y: 380, label: 'q10_seek_x1', description: 'Rewind for 1', role: 'normal', color: '#d97706' },
+    q10_place_1: { x: 260, y: 380, label: 'q10_place_1', description: 'Place bit 1', role: 'normal', color: '#059669' },
+    q6_seek_msb_after_place: { x: 440, y: 500, label: 'q6_return', description: 'Return right', role: 'normal', color: '#7c3aed' },
+    q11_cleanup: { x: 960, y: 140, label: 'q11_clean', description: 'Erase Xs', role: 'normal', color: '#ea580c' },
+    q12_rewind_to_start: { x: 960, y: 260, label: 'q12_rewind', description: 'Rewind to MSB', role: 'normal', color: '#16a34a' },
+    q_accept: { x: 960, y: 380, label: 'q_accept', description: 'Accept ✓', role: 'accept', color: '#16a34a' },
+    q_reject: { x: 80, y: 380, label: 'q_reject', description: 'Reject ✕', role: 'reject', color: '#dc2626' },
+  },
+  explanationGuide: {
+    title: 'Unary to Binary Transducer Algorithm f(1ⁿ) = bin(n)',
+    steps: [
+      { step: 1, title: 'Unary Marking & Counter Scan', desc: 'Scan tape in state q0. When reading "1", mark it as "X" and advance right to the binary counter segment past delimiter "#".', iconSymbol: '1→X', color: '#2563eb' },
+      { step: 2, title: 'Binary Increment (LSB-First)', desc: 'Increment the binary counter placed after "#". If bit is 0, flip to 1 (no carry) and rewind. If bit is 1, flip to 0 and carry right.', iconSymbol: '+1', color: '#0891b2' },
+      { step: 3, title: 'Rewind & Repeat', desc: 'Rewind left past "#" to find the next unmarked unary "1" in state q0. Repeat until all n unary ones are counted.', iconSymbol: '↺', color: '#d97706' },
+      { step: 4, title: 'Bit Reversal & Relocation', desc: 'Fetch bits from the reverse counter (MSB down to LSB) and transfer each bit leftward into the tape start in standard MSB-first order.', iconSymbol: '⇄', color: '#7c3aed' },
+      { step: 5, title: 'Cleanup & Position Head', desc: 'Erase delimiter "#" and any unused "X" markers to blank "B". Park tape head at the Most Significant Bit and accept.', iconSymbol: '✓', color: '#16a34a' },
+    ],
+  },
+  transitions: [
+    // Phase 1: COUNT_UNARY
+    { currentState: 'q0', readSymbol: '1', writeSymbol: 'X', moveDirection: 'R', nextState: 'q1', phaseName: 'COUNT_UNARY', description: 'Found unary 1. Mark as "X" and advance right to increment binary counter.' },
+    { currentState: 'q0', readSymbol: 'X', writeSymbol: 'X', moveDirection: 'R', nextState: 'q0', phaseName: 'COUNT_UNARY', description: 'Scanning past previously marked "X".' },
+    { currentState: 'q0', readSymbol: '#', writeSymbol: '#', moveDirection: 'R', nextState: 'q6_seek_msb', phaseName: 'SEEK_MSB', description: 'All unary 1s marked! Begin transfer: locate MSB of binary result.' },
+    { currentState: 'q0', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Empty input rejected.' },
+
+    // q1: Scan right across remaining unary '1's to '#' delimiter or trailing blank 'B'
+    { currentState: 'q1', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q1', phaseName: 'SEEK_COUNTER', description: 'Scanning right across unary "1"s.' },
+    { currentState: 'q1', readSymbol: '#', writeSymbol: '#', moveDirection: 'R', nextState: 'q2', phaseName: 'INC_BINARY', description: 'Reached delimiter "#". Enter binary increment state q2.' },
+    { currentState: 'q1', readSymbol: 'B', writeSymbol: '#', moveDirection: 'R', nextState: 'q3_init', phaseName: 'INIT_COUNTER', description: 'First "1" processed: place delimiter "#" and initialize binary counter.' },
+
+    // q3_init: Initialize first binary bit '1'
+    { currentState: 'q3_init', readSymbol: 'B', writeSymbol: '1', moveDirection: 'L', nextState: 'q4_rewind', phaseName: 'REWIND', description: 'Initialized binary counter with "1". Begin rewind.' },
+
+    // Phase 2: INC_BINARY (Reverse Binary Counter: LSB first after '#')
+    { currentState: 'q2', readSymbol: '0', writeSymbol: '1', moveDirection: 'L', nextState: 'q4_rewind', phaseName: 'REWIND', description: 'Bit 0 + 1 = 1 (no carry). Rewind to unary segment.' },
+    { currentState: 'q2', readSymbol: '1', writeSymbol: '0', moveDirection: 'R', nextState: 'q2', phaseName: 'INC_BINARY', description: 'Bit 1 + 1 = 0 (carry 1 to next higher bit).' },
+    { currentState: 'q2', readSymbol: 'B', writeSymbol: '1', moveDirection: 'L', nextState: 'q4_rewind', phaseName: 'REWIND', description: 'Carry overflow: append new MSB "1" and rewind.' },
+
+    // Phase 3: REWIND
+    { currentState: 'q4_rewind', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q4_rewind', phaseName: 'REWIND', description: 'Rewinding left across binary 0s.' },
+    { currentState: 'q4_rewind', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q4_rewind', phaseName: 'REWIND', description: 'Rewinding left across binary 1s.' },
+    { currentState: 'q4_rewind', readSymbol: '#', writeSymbol: '#', moveDirection: 'L', nextState: 'q5_rewind_unary', phaseName: 'REWIND', description: 'Crossed "#". Now rewinding across unary segment.' },
+
+    { currentState: 'q5_rewind_unary', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q5_rewind_unary', phaseName: 'REWIND', description: 'Rewinding left across unary "1"s.' },
+    { currentState: 'q5_rewind_unary', readSymbol: 'X', writeSymbol: 'X', moveDirection: 'R', nextState: 'q0', phaseName: 'COUNT_UNARY', description: 'Found marker "X". Step right into state q0 for next unary "1".' },
+    { currentState: 'q5_rewind_unary', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q0', phaseName: 'COUNT_UNARY', description: 'Hit left blank boundary. Step right into state q0.' },
+
+    // Phase 4: TRANSFER BITS (MSB to LSB) INTO LEFTMOST 'X' CELLS
+    { currentState: 'q6_seek_msb', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q6_seek_msb', phaseName: 'SEEK_MSB', description: 'Scanning right across binary 0s.' },
+    { currentState: 'q6_seek_msb', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q6_seek_msb', phaseName: 'SEEK_MSB', description: 'Scanning right across binary 1s.' },
+    { currentState: 'q6_seek_msb', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'L', nextState: 'q7_read_msb', phaseName: 'FETCH_BIT', description: 'Reached trailing blank. Step left to read current MSB.' },
+
+    { currentState: 'q7_read_msb', readSymbol: '0', writeSymbol: 'B', moveDirection: 'L', nextState: 'q8_carry_0', phaseName: 'CARRY_BIT', description: 'Read MSB "0". Erase to blank "B" and carry left.' },
+    { currentState: 'q7_read_msb', readSymbol: '1', writeSymbol: 'B', moveDirection: 'L', nextState: 'q9_carry_1', phaseName: 'CARRY_BIT', description: 'Read MSB "1". Erase to blank "B" and carry left.' },
+    { currentState: 'q7_read_msb', readSymbol: '#', writeSymbol: 'B', moveDirection: 'L', nextState: 'q11_cleanup', phaseName: 'CLEANUP', description: 'All binary bits transferred! Erase "#" and clean up remaining "X" markers.' },
+
+    { currentState: 'q8_carry_0', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q8_carry_0', phaseName: 'CARRY_BIT', description: 'Carrying "0" left across remaining binary digits.' },
+    { currentState: 'q8_carry_0', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q8_carry_0', phaseName: 'CARRY_BIT', description: 'Carrying "0" left across remaining binary digits.' },
+    { currentState: 'q8_carry_0', readSymbol: '#', writeSymbol: '#', moveDirection: 'L', nextState: 'q10_seek_leftmost_x', phaseName: 'CARRY_BIT', description: 'Crossed "#". Rewind to start of tape to find leftmost "X" for bit 0.' },
+
+    { currentState: 'q9_carry_1', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q9_carry_1', phaseName: 'CARRY_BIT', description: 'Carrying "1" left across remaining binary digits.' },
+    { currentState: 'q9_carry_1', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q9_carry_1', phaseName: 'CARRY_BIT', description: 'Carrying "1" left across remaining binary digits.' },
+    { currentState: 'q9_carry_1', readSymbol: '#', writeSymbol: '#', moveDirection: 'L', nextState: 'q10_seek_leftmost_x_for_1', phaseName: 'CARRY_BIT', description: 'Crossed "#". Rewind to start of tape to find leftmost "X" for bit 1.' },
+
+    { currentState: 'q10_seek_leftmost_x', readSymbol: 'X', writeSymbol: 'X', moveDirection: 'L', nextState: 'q10_seek_leftmost_x', phaseName: 'CARRY_BIT', description: 'Rewinding left across "X"s.' },
+    { currentState: 'q10_seek_leftmost_x', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q10_seek_leftmost_x', phaseName: 'CARRY_BIT', description: 'Rewinding left across placed bits.' },
+    { currentState: 'q10_seek_leftmost_x', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q10_seek_leftmost_x', phaseName: 'CARRY_BIT', description: 'Rewinding left across placed bits.' },
+    { currentState: 'q10_seek_leftmost_x', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q10_place_0', phaseName: 'PLACE_BIT', description: 'Hit left boundary. Step right to find first available "X".' },
+
+    { currentState: 'q10_place_0', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q10_place_0', phaseName: 'PLACE_BIT', description: 'Skipping placed bit 0.' },
+    { currentState: 'q10_place_0', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q10_place_0', phaseName: 'PLACE_BIT', description: 'Skipping placed bit 1.' },
+    { currentState: 'q10_place_0', readSymbol: 'X', writeSymbol: '0', moveDirection: 'R', nextState: 'q6_seek_msb_after_place', phaseName: 'SEEK_MSB', description: 'Found leftmost "X"! Write bit "0" and return to fetch next bit.' },
+
+    { currentState: 'q10_seek_leftmost_x_for_1', readSymbol: 'X', writeSymbol: 'X', moveDirection: 'L', nextState: 'q10_seek_leftmost_x_for_1', phaseName: 'CARRY_BIT', description: 'Rewinding left across "X"s.' },
+    { currentState: 'q10_seek_leftmost_x_for_1', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q10_seek_leftmost_x_for_1', phaseName: 'CARRY_BIT', description: 'Rewinding left across placed bits.' },
+    { currentState: 'q10_seek_leftmost_x_for_1', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q10_seek_leftmost_x_for_1', phaseName: 'CARRY_BIT', description: 'Rewinding left across placed bits.' },
+    { currentState: 'q10_seek_leftmost_x_for_1', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q10_place_1', phaseName: 'PLACE_BIT', description: 'Hit left boundary. Step right to find first available "X".' },
+
+    { currentState: 'q10_place_1', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q10_place_1', phaseName: 'PLACE_BIT', description: 'Skipping placed bit 0.' },
+    { currentState: 'q10_place_1', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q10_place_1', phaseName: 'PLACE_BIT', description: 'Skipping placed bit 1.' },
+    { currentState: 'q10_place_1', readSymbol: 'X', writeSymbol: '1', moveDirection: 'R', nextState: 'q6_seek_msb_after_place', phaseName: 'SEEK_MSB', description: 'Found leftmost "X"! Write bit "1" and return to fetch next bit.' },
+
+    { currentState: 'q6_seek_msb_after_place', readSymbol: 'X', writeSymbol: 'X', moveDirection: 'R', nextState: 'q6_seek_msb_after_place', phaseName: 'SEEK_MSB', description: 'Scanning right across remaining "X"s.' },
+    { currentState: 'q6_seek_msb_after_place', readSymbol: '#', writeSymbol: '#', moveDirection: 'R', nextState: 'q6_seek_msb', phaseName: 'SEEK_MSB', description: 'Crossed "#". Now seeking rightmost binary bit in q6_seek_msb.' },
+
+    // Phase 5: CLEANUP & ACCEPT
+    { currentState: 'q11_cleanup', readSymbol: 'X', writeSymbol: 'B', moveDirection: 'L', nextState: 'q11_cleanup', phaseName: 'CLEANUP', description: 'Erase remaining "X" to blank "B".' },
+    { currentState: 'q11_cleanup', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q12_rewind_to_start', phaseName: 'ACCEPT', description: 'Reached binary result! Rewind left to MSB.' },
+    { currentState: 'q11_cleanup', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q12_rewind_to_start', phaseName: 'ACCEPT', description: 'Reached binary result! Rewind left to MSB.' },
+    { currentState: 'q11_cleanup', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'All cleaned up. Accept!' },
+
+    { currentState: 'q12_rewind_to_start', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q12_rewind_to_start', phaseName: 'ACCEPT', description: 'Rewinding to MSB.' },
+    { currentState: 'q12_rewind_to_start', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q12_rewind_to_start', phaseName: 'ACCEPT', description: 'Rewinding to MSB.' },
+    { currentState: 'q12_rewind_to_start', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'Position head at MSB of binary result. Accept ✓' },
+  ],
+};
+
+/* ------------------------------------------------------------------
+ * MACHINE 14: Binary Decrement (w - 1)
+ * ------------------------------------------------------------------ */
+export const BINARY_DECREMENT_MACHINE: TuringMachineDefinition = {
+  id: 'binaryDecrement',
+  name: 'Binary Decrement',
+  category: 'Basic',
+  description: 'Transducer that computes f(w) = w - 1 (Base 2). Subtracts 1 from a binary number with borrow propagation and leading-zero normalization.',
+  formalTitle: 'Transducer: Binary Decrement f(w) = w - 1',
+  language: 'f(w) = w - 1 (for w > 0, Base 2)',
+  states: ['q0', 'q1', 'q2', 'q3', 'q4_check_trailing', 'q5_erase_leading_zero', 'q6_single_zero', 'q_accept', 'q_reject'],
+  inputAlphabet: ['0', '1'],
+  tapeAlphabet: ['0', '1', 'B'],
+  initialState: 'q0',
+  blankSymbol: 'B',
+  acceptStates: ['q_accept'],
+  rejectStates: ['q_reject'],
+  defaultInput: '1000',
+  presetInputs: [
+    { label: '1 (1₁₀ - 1 = 0₂)', value: '1', expected: 'ACCEPT', note: '1 - 1 = 0' },
+    { label: '10 (2₁₀ - 1 = 1₂)', value: '10', expected: 'ACCEPT', note: '2 - 1 = 1' },
+    { label: '11 (3₁₀ - 1 = 10₂)', value: '11', expected: 'ACCEPT', note: '3 - 1 = 2' },
+    { label: '100 (4₁₀ - 1 = 11₂)', value: '100', expected: 'ACCEPT', note: '4 - 1 = 3 (Borrow chain & normalization)' },
+    { label: '101 (5₁₀ - 1 = 100₂)', value: '101', expected: 'ACCEPT', note: '5 - 1 = 4' },
+    { label: '110 (6₁₀ - 1 = 101₂)', value: '110', expected: 'ACCEPT', note: '6 - 1 = 5' },
+    { label: '1000 (8₁₀ - 1 = 111₂)', value: '1000', expected: 'ACCEPT', note: '8 - 1 = 7 (Triple borrow propagation)' },
+    { label: '1010 (10₁₀ - 1 = 1001₂)', value: '1010', expected: 'ACCEPT', note: '10 - 1 = 9' },
+  ],
+  algorithmPhases: [
+    { id: 'SEEK_LSB', label: 'SEEK LSB', description: 'Scan tape right to locate Least Significant Bit', states: ['q0'], color: '#2563eb' },
+    { id: 'BORROW_DEC', label: 'BORROW / SUB 1', description: 'Subtract 1: flip trailing 0s to 1s until first 1 becomes 0', states: ['q1'], color: '#7c3aed' },
+    { id: 'REWIND', label: 'REWIND', description: 'Rewind left to tape start', states: ['q2'], color: '#d97706' },
+    { id: 'NORMALIZE', label: 'NORMALIZE', description: 'Clean leading zero if bit-width shrunk', states: ['q3', 'q4_check_trailing', 'q5_erase_leading_zero'], color: '#0891b2' },
+    { id: 'ACCEPT', label: 'ACCEPT', description: 'Position head at MSB and accept', states: ['q6_single_zero', 'q_accept'], color: '#16a34a' },
+  ],
+  statePositions: {
+    q0: { x: 100, y: 140, label: 'q0', description: 'Scan to LSB', role: 'start', color: '#2563eb' },
+    q1: { x: 300, y: 140, label: 'q1', description: 'Borrow (0→1, 1→0)', role: 'normal', color: '#7c3aed' },
+    q2: { x: 500, y: 140, label: 'q2', description: 'Rewind Left', role: 'normal', color: '#d97706' },
+    q3: { x: 700, y: 140, label: 'q3', description: 'Check MSB (0/1)', role: 'normal', color: '#0891b2' },
+    q4_check_trailing: { x: 700, y: 260, label: 'q4_check', description: 'Multi-digit check', role: 'normal', color: '#7c3aed' },
+    q5_erase_leading_zero: { x: 500, y: 260, label: 'q5_erase', description: 'Erase leading 0', role: 'normal', color: '#ea580c' },
+    q6_single_zero: { x: 700, y: 380, label: 'q6_zero', description: 'Keep single 0', role: 'normal', color: '#059669' },
+    q_accept: { x: 900, y: 140, label: 'q_accept', description: 'Accept ✓', role: 'accept', color: '#16a34a' },
+    q_reject: { x: 300, y: 260, label: 'q_reject', description: 'Underflow ✕', role: 'reject', color: '#dc2626' },
+  },
+  explanationGuide: {
+    title: 'Binary Decrement Algorithm f(w) = w - 1',
+    steps: [
+      { step: 1, title: 'Locate LSB', desc: 'Scan tape right in state q0 until reaching trailing blank B, then step left to the Least Significant Bit (LSB).', iconSymbol: '→', color: '#2563eb' },
+      { step: 2, title: 'Subtract 1 with Borrow', desc: 'In state q1 moving left: flip every trailing 0 to 1 (borrowing from higher bit). When the first 1 is encountered, flip it to 0 (borrow fulfilled) and transition to rewind state q2.', iconSymbol: '-1', color: '#7c3aed' },
+      { step: 3, title: 'Rewind to Boundary', desc: 'In state q2, move left across remaining prefix bits until hitting the left blank B, then step right into state q3.', iconSymbol: '←', color: '#d97706' },
+      { step: 4, title: 'Normalize Leading Zeros', desc: 'If the MSB became 0 and the number had multiple digits (e.g. 100 → 011 → 11), erase the leading 0. For single 1 (1 - 1 = 0), keep the 0.', iconSymbol: '0→B', color: '#0891b2' },
+      { step: 5, title: 'Position Head & Accept', desc: 'Position tape head on the Most Significant Bit of the result and accept.', iconSymbol: '✓', color: '#16a34a' },
+    ],
+  },
+  transitions: [
+    // q0: Scan right to locate LSB
+    { currentState: 'q0', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q0', phaseName: 'SEEK_LSB', description: 'Scanning right past 0.' },
+    { currentState: 'q0', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q0', phaseName: 'SEEK_LSB', description: 'Scanning right past 1.' },
+    { currentState: 'q0', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'L', nextState: 'q1', phaseName: 'BORROW_DEC', description: 'Found right end of number. Step left to LSB in state q1.' },
+
+    // q1: Decrement at LSB with borrow propagation
+    { currentState: 'q1', readSymbol: '1', writeSymbol: '0', moveDirection: 'L', nextState: 'q2', phaseName: 'REWIND', description: 'Bit 1 - 1 = 0. Borrow fulfilled! Rewind to start of number in q2.' },
+    { currentState: 'q1', readSymbol: '0', writeSymbol: '1', moveDirection: 'L', nextState: 'q1', phaseName: 'BORROW_DEC', description: 'Bit 0 - 1 = 1 (borrow 1 from higher bit). Continue left in q1.' },
+    { currentState: 'q1', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_reject', phaseName: 'REJECT', description: 'Underflow: 0 cannot be decremented in natural numbers. Reject.' },
+
+    // q2: Rewind left to boundary
+    { currentState: 'q2', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q2', phaseName: 'REWIND', description: 'Rewinding left across 0.' },
+    { currentState: 'q2', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q2', phaseName: 'REWIND', description: 'Rewinding left across 1.' },
+    { currentState: 'q2', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q3', phaseName: 'NORMALIZE', description: 'Reached left boundary. Step right to check MSB in state q3.' },
+
+    // q3: Check MSB
+    { currentState: 'q3', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'MSB is 1. Head positioned at number start. Accept ✓' },
+    { currentState: 'q3', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q4_check_trailing', phaseName: 'NORMALIZE', description: 'Leading bit is 0. Check if subsequent digits exist.' },
+
+    // q4_check_trailing: Inspect if there are remaining bits
+    { currentState: 'q4_check_trailing', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q5_erase_leading_zero', phaseName: 'NORMALIZE', description: 'Additional digits found. Return left to erase leading zero.' },
+    { currentState: 'q4_check_trailing', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q5_erase_leading_zero', phaseName: 'NORMALIZE', description: 'Additional digits found. Return left to erase leading zero.' },
+    { currentState: 'q4_check_trailing', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'L', nextState: 'q6_single_zero', phaseName: 'ACCEPT', description: 'No other digits. Result is single 0 (1 - 1 = 0). Position head and accept ✓' },
+
+    // q5_erase_leading_zero: Erase leading zero to blank B and park at new MSB
+    { currentState: 'q5_erase_leading_zero', readSymbol: '0', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'Erased leading 0. Head positioned at new MSB. Accept ✓' },
+
+    // q6_single_zero: Park head on 0
+    { currentState: 'q6_single_zero', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'Head positioned on 0. Accept ✓' },
+  ],
+};
+
 export const AVAILABLE_MACHINES: TuringMachineDefinition[] = [
   AN_BN_MACHINE,
   PALINDROME_MACHINE,
@@ -595,4 +1409,12 @@ export const AVAILABLE_MACHINES: TuringMachineDefinition[] = [
   AN_B2N_MACHINE,
   EQUAL_01_MACHINE,
   EVEN_1S_MACHINE,
+  AN_BN_CN_MACHINE,
+  STRING_COPY_MACHINE,
+  BINARY_ADDITION_MACHINE,
+  BINARY_SUBTRACTION_MACHINE,
+  ONES_COMPLEMENT_MACHINE,
+  TWOS_COMPLEMENT_MACHINE,
+  UNARY_TO_BINARY_MACHINE,
+  BINARY_DECREMENT_MACHINE,
 ];

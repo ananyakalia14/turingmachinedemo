@@ -1,4 +1,4 @@
-import { TuringMachineDefinition, Transition, Direction } from './types';
+import { TuringMachineDefinition, Transition, Direction, PresetInput } from './types';
 import { initializeSimulation, stepSimulation } from './turingMachine';
 import {
   AN_BN_MACHINE,
@@ -7,6 +7,12 @@ import {
   EQUAL_01_MACHINE,
   EVEN_1S_MACHINE,
   UNARY_INCREMENT_MACHINE,
+  AN_BN_CN_MACHINE,
+  STRING_COPY_MACHINE,
+  BINARY_ADDITION_MACHINE,
+  BINARY_SUBTRACTION_MACHINE,
+  UNARY_TO_BINARY_MACHINE,
+  BINARY_DECREMENT_MACHINE,
 } from '../data/machines';
 
 export interface InterpretationResult {
@@ -287,6 +293,819 @@ function buildBinaryIncrementMachine(): TuringMachineDefinition {
 }
 
 /**
+ * 1's Complement Transducer Generator: f(w) = not(w)
+ */
+export function buildOnesComplementMachine(): TuringMachineDefinition {
+  const transitions: Transition[] = [
+    // q0: Invert bits while moving right until trailing blank
+    { currentState: 'q0', readSymbol: '0', writeSymbol: '1', moveDirection: 'R', nextState: 'q0', phaseName: 'INVERT', description: 'Bit 0 → Inverted to 1. Move right.' },
+    { currentState: 'q0', readSymbol: '1', writeSymbol: '0', moveDirection: 'R', nextState: 'q0', phaseName: 'INVERT', description: 'Bit 1 → Inverted to 0. Move right.' },
+    { currentState: 'q0', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'L', nextState: 'q1', phaseName: 'REWIND', description: 'Reached right blank boundary. Step left to rewind in q1.' },
+
+    // q1: Rewind left back to MSB
+    { currentState: 'q1', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q1', phaseName: 'REWIND', description: 'Rewinding left across 0.' },
+    { currentState: 'q1', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q1', phaseName: 'REWIND', description: 'Rewinding left across 1.' },
+    { currentState: 'q1', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'Hit left blank boundary. Position head at MSB and accept ✓' },
+  ];
+
+  const presetInputs: PresetInput[] = [
+    { label: '1011 → 0100', value: '1011', expected: 'ACCEPT', note: 'Bit inversion' },
+    { label: '1100 → 0011', value: '1100', expected: 'ACCEPT', note: 'All bits flipped' },
+    { label: '0 → 1', value: '0', expected: 'ACCEPT', note: 'Single bit 0' },
+    { label: '1 → 0', value: '1', expected: 'ACCEPT', note: 'Single bit 1' },
+    { label: '101010 → 010101', value: '101010', expected: 'ACCEPT', note: 'Alternating bits' },
+  ];
+
+  return {
+    id: `ones-complement-${Date.now()}`,
+    name: "1's Complement Transducer",
+    category: 'Basic',
+    description: "Turing Machine transducer that computes the 1's complement of an arbitrary binary string by flipping every bit (0 ↔ 1).",
+    formalTitle: "Transducer: f(w) = 1's Complement of w",
+    language: "f(w) = w̄ (Bitwise NOT in base 2)",
+    states: ['q0', 'q1', 'q_accept', 'q_reject'],
+    inputAlphabet: ['0', '1'],
+    tapeAlphabet: ['0', '1', 'B'],
+    initialState: 'q0',
+    blankSymbol: 'B',
+    acceptStates: ['q_accept'],
+    rejectStates: ['q_reject'],
+    transitions,
+    defaultInput: '1011',
+    presetInputs,
+    algorithmPhases: [
+      { id: 'INVERT', label: 'BITWISE INVERSION', description: 'Scan right replacing 0 with 1 and 1 with 0', states: ['q0'], color: '#2563eb' },
+      { id: 'REWIND', label: 'REWIND TO MSB', description: 'Return tape head left to most significant bit', states: ['q1'], color: '#7c3aed' },
+      { id: 'ACCEPT', label: 'COMPLETED', description: 'Position head at start and halt in accept state', states: ['q_accept'], color: '#16a34a' },
+    ],
+    statePositions: {
+      q0: { x: 180, y: 140, label: 'q0', description: 'Flip bits (0↔1)', role: 'start', color: '#2563eb' },
+      q1: { x: 460, y: 140, label: 'q1', description: 'Rewind left', role: 'normal', color: '#7c3aed' },
+      q_accept: { x: 740, y: 140, label: 'q_accept', description: 'Done ✓', role: 'accept', color: '#16a34a' },
+      q_reject: { x: 460, y: 260, label: 'q_reject', description: 'Reject ✕', role: 'reject', color: '#dc2626' },
+    },
+    edgeLayouts: {
+      'q0-->q0': { loopDirection: 'top' },
+      'q0-->q1': { labelX: 320, labelY: 115, curveOffset: 0 },
+      'q1-->q1': { loopDirection: 'top' },
+      'q1-->q_accept': { labelX: 600, labelY: 115, curveOffset: 0 },
+    },
+    explanationGuide: {
+      title: "1's Complement Bitwise Inversion",
+      steps: [
+        { step: 1, title: 'Invert Every Bit', desc: 'In state q0, scan left-to-right replacing every 0 with 1, and every 1 with 0.', iconSymbol: '0↔1', color: '#2563eb' },
+        { step: 2, title: 'Locate End of String', desc: 'Upon reading the trailing blank B, step one cell left to enter rewind state q1.', iconSymbol: '←', color: '#7c3aed' },
+        { step: 3, title: 'Rewind & Halt', desc: 'Rewind left to the beginning blank boundary and halt at the most significant bit.', iconSymbol: '✓', color: '#16a34a' },
+      ],
+    },
+  };
+}
+
+/**
+ * 2's Complement Transducer Generator
+ */
+export function buildTwosComplementMachine(): TuringMachineDefinition {
+  const transitions: Transition[] = [
+    // q0: Scan right to find the end (LSB) of the binary string
+    { currentState: 'q0', readSymbol: '0', writeSymbol: '0', moveDirection: 'R', nextState: 'q0', phaseName: 'SEEK_LSB', description: 'Scanning right past 0.' },
+    { currentState: 'q0', readSymbol: '1', writeSymbol: '1', moveDirection: 'R', nextState: 'q0', phaseName: 'SEEK_LSB', description: 'Scanning right past 1.' },
+    { currentState: 'q0', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'L', nextState: 'q1', phaseName: 'SCAN_TRAILING', description: 'Found right end of number. Step left to begin 2\'s complement scan in q1.' },
+
+    // q1: Moving left - preserve trailing 0's and first 1
+    { currentState: 'q1', readSymbol: '0', writeSymbol: '0', moveDirection: 'L', nextState: 'q1', phaseName: 'SCAN_TRAILING', description: 'Trailing 0 preserved unchanged. Move left.' },
+    { currentState: 'q1', readSymbol: '1', writeSymbol: '1', moveDirection: 'L', nextState: 'q2', phaseName: 'INVERT_PREFIX', description: 'First 1 preserved! Transition to state q2 to invert all remaining left bits.' },
+    { currentState: 'q1', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'All-zeros string. Position head at MSB and accept ✓' },
+
+    // q2: Moving left - invert all remaining bits to the left
+    { currentState: 'q2', readSymbol: '0', writeSymbol: '1', moveDirection: 'L', nextState: 'q2', phaseName: 'INVERT_PREFIX', description: 'Prefix bit 0 → Inverted to 1. Move left.' },
+    { currentState: 'q2', readSymbol: '1', writeSymbol: '0', moveDirection: 'L', nextState: 'q2', phaseName: 'INVERT_PREFIX', description: 'Prefix bit 1 → Inverted to 0. Move left.' },
+    { currentState: 'q2', readSymbol: 'B', writeSymbol: 'B', moveDirection: 'R', nextState: 'q_accept', phaseName: 'ACCEPT', description: 'Hit left blank boundary! Position head at MSB. 2\'s complement complete ✓' },
+  ];
+
+  const presetInputs: PresetInput[] = [
+    { label: '1100 → 0100', value: '1100', expected: 'ACCEPT', note: '12 → 4 in 4-bit' },
+    { label: '1011 → 0101', value: '1011', expected: 'ACCEPT', note: '11 → 5 in 4-bit' },
+    { label: '1010 → 0110', value: '1010', expected: 'ACCEPT', note: '10 → 6 in 4-bit' },
+    { label: '1000 → 1000', value: '1000', expected: 'ACCEPT', note: '8 → 8 (MSB boundary)' },
+    { label: '1111 → 0001', value: '1111', expected: 'ACCEPT', note: 'All ones' },
+    { label: '0000 → 0000', value: '0000', expected: 'ACCEPT', note: 'All zeros' },
+  ];
+
+  return {
+    id: `twos-complement-${Date.now()}`,
+    name: "2's Complement Transducer",
+    category: 'Basic',
+    description: "Turing Machine transducer that computes the 2's complement of a binary number (f(w) = -w in 2's complement).",
+    formalTitle: "Transducer: f(w) = 2's Complement of w",
+    language: "f(w) = 2's Complement of w (Base 2)",
+    states: ['q0', 'q1', 'q2', 'q_accept', 'q_reject'],
+    inputAlphabet: ['0', '1'],
+    tapeAlphabet: ['0', '1', 'B'],
+    initialState: 'q0',
+    blankSymbol: 'B',
+    acceptStates: ['q_accept'],
+    rejectStates: ['q_reject'],
+    transitions,
+    defaultInput: '1100',
+    presetInputs,
+    algorithmPhases: [
+      { id: 'SEEK_LSB', label: 'SEEK LSB', description: 'Scan right to find least significant bit', states: ['q0'], color: '#2563eb' },
+      { id: 'SCAN_TRAILING', label: 'PRESERVE TRAILING', description: 'Keep trailing 0s and first 1 unchanged', states: ['q1'], color: '#7c3aed' },
+      { id: 'INVERT_PREFIX', label: 'INVERT PREFIX', description: 'Flip all bits left of the first 1 (0 ↔ 1)', states: ['q2'], color: '#0891b2' },
+      { id: 'ACCEPT', label: 'COMPLETED', description: 'Position head at MSB and accept', states: ['q_accept'], color: '#16a34a' },
+    ],
+    statePositions: {
+      q0: { x: 140, y: 140, label: 'q0', description: 'Scan to LSB', role: 'start', color: '#2563eb' },
+      q1: { x: 380, y: 140, label: 'q1', description: 'Keep 0s & 1st 1', role: 'normal', color: '#7c3aed' },
+      q2: { x: 620, y: 140, label: 'q2', description: 'Invert rest (0↔1)', role: 'normal', color: '#0891b2' },
+      q_accept: { x: 840, y: 140, label: 'q_accept', description: 'Done ✓', role: 'accept', color: '#16a34a' },
+      q_reject: { x: 380, y: 260, label: 'q_reject', description: 'Reject ✕', role: 'reject', color: '#dc2626' },
+    },
+    edgeLayouts: {
+      'q0-->q0': { loopDirection: 'top' },
+      'q0-->q1': { labelX: 260, labelY: 115, curveOffset: 0 },
+      'q1-->q1': { loopDirection: 'top' },
+      'q1-->q2': { labelX: 500, labelY: 115, curveOffset: 0 },
+      'q1-->q_accept': { labelX: 610, labelY: 50, curveOffset: -30 },
+      'q2-->q2': { loopDirection: 'top' },
+      'q2-->q_accept': { labelX: 730, labelY: 115, curveOffset: 0 },
+    },
+    explanationGuide: {
+      title: "2's Complement Direct Scan Algorithm",
+      steps: [
+        { step: 1, title: 'Locate LSB (Rightmost Bit)', desc: 'Scan tape right in state q0 until reaching trailing blank B, then step left into q1.', iconSymbol: '→', color: '#2563eb' },
+        { step: 2, title: 'Preserve Trailing 0s & First 1', desc: 'In state q1, moving left: keep all trailing 0s unchanged. When the first 1 is encountered, leave it as 1 and enter state q2.', iconSymbol: '0*1', color: '#7c3aed' },
+        { step: 3, title: 'Invert Remaining Bits', desc: 'In state q2, invert every remaining bit to the left (flip 0 to 1 and 1 to 0) until reaching left blank B.', iconSymbol: '0↔1', color: '#0891b2' },
+        { step: 4, title: 'Reposition Head & Accept', desc: 'Hit left blank boundary, position head at most significant bit, and accept.', iconSymbol: '✓', color: '#16a34a' },
+      ],
+    },
+  };
+}
+
+/**
+ * Consistent Write Symbol Mapping:
+ * Maps each input/read symbol to a deterministic, unique write marker symbol across the entire machine.
+ * E.g. 'a' -> 'X', 'b' -> 'Y', 'c' -> 'Z', 'd' -> 'W'
+ *      '0' -> 'X', '1' -> 'Y', '2' -> 'Z', '3' -> 'W'
+ */
+export function getConsistentWriteSymbol(readSym: string, alphabet?: string[]): string {
+  const fixedMap: Record<string, string> = {
+    'a': 'X',
+    'b': 'Y',
+    'c': 'Z',
+    'd': 'W',
+    'e': 'U',
+    'f': 'V',
+    '0': 'X',
+    '1': 'Y',
+    '2': 'Z',
+    '3': 'W',
+    '4': 'U',
+    '5': 'V',
+    'A': 'X',
+    'B': 'Y',
+    'C': 'Z',
+    'D': 'W',
+  };
+
+  if (fixedMap[readSym]) {
+    return fixedMap[readSym];
+  }
+
+  const markerList = ['X', 'Y', 'Z', 'W', 'U', 'V', 'M', 'N', 'P', 'Q'];
+  if (alphabet && alphabet.length > 0) {
+    const idx = alphabet.indexOf(readSym);
+    if (idx >= 0 && idx < markerList.length) {
+      return markerList[idx];
+    }
+  }
+
+  return readSym.toUpperCase() !== readSym ? readSym.toUpperCase() : 'X';
+}
+
+/**
+ * Parses free-form string targets, alphabets, and matching modes from queries
+ */
+export function extractTargetString(q: string): {
+  target: string;
+  alphabet: string[];
+  mode: 'exact' | 'contains' | 'starts_with' | 'ends_with';
+} | null {
+  const lower = q.toLowerCase();
+  let mode: 'exact' | 'contains' | 'starts_with' | 'ends_with' = 'exact';
+  if (lower.includes('contain') || lower.includes('substring') || lower.includes('having')) {
+    mode = 'contains';
+  } else if (lower.includes('starts with') || lower.includes('start with') || lower.includes('beginning with')) {
+    mode = 'starts_with';
+  } else if (lower.includes('ends with') || lower.includes('end with') || lower.includes('ending with')) {
+    mode = 'ends_with';
+  }
+
+  // 1. Quoted string: '01*0' or "01*0"
+  const quoteMatch = q.match(/['"]([a-zA-Z0-9*+]+)['"]/);
+  // 2. Set notation: L = { 01*0 } or { 01*0 }
+  const setMatch = q.match(/\{\s*([a-zA-Z0-9*+]+)\s*\}/);
+  // 3. Language / string / word <target>
+  const langMatch = q.match(/(?:language|string|word|pattern)\s+['"]?([a-zA-Z0-9*+]+)['"]?/i);
+  // 4. Accepts / recognizing <target>
+  const acceptMatch = q.match(/(?:accepts|accepting|accept|recognizes|recognizing)\s+(?:language\s+)?['"]?([a-zA-Z0-9*+]+)['"]?/i);
+
+  let target = quoteMatch?.[1] || setMatch?.[1] || langMatch?.[1] || acceptMatch?.[1];
+
+  if (!target) return null;
+
+  // Filter out stop words that might be matched accidentally
+  const stopWords = new Set(['a', 'the', 'an', 'language', 'string', 'turing', 'machine', 'tm', 'binary', 'unary']);
+  if (stopWords.has(target.toLowerCase()) && !quoteMatch && !setMatch) {
+    return null;
+  }
+
+  // Parse alphabet if specified (e.g. input{0,1}, over {0,1}, sigma = {a,b})
+  let customAlphabet: string[] = [];
+  const alphaMatch = q.match(/(?:input|alphabet|over|sigma|∑)\s*[:=]?\s*[\{]?\s*([a-zA-Z0-9,\s]+)[\}]?/i);
+  if (alphaMatch && alphaMatch[1]) {
+    customAlphabet = alphaMatch[1]
+      .split(/[,|\s]+/)
+      .map((s) => s.trim().toLowerCase())
+      .filter((s) => s.length === 1 && /[a-zA-Z0-9]/.test(s));
+  }
+
+  const rawChars = target.replace(/[*+]/g, '').split('');
+  const charSet = new Set<string>(rawChars);
+  if (customAlphabet.length > 0) {
+    customAlphabet.forEach((c) => charSet.add(c));
+  } else {
+    if (charSet.has('a') || charSet.has('b')) {
+      charSet.add('a');
+      charSet.add('b');
+    } else if (charSet.has('0') || charSet.has('1')) {
+      charSet.add('0');
+      charSet.add('1');
+    }
+  }
+
+  return {
+    target,
+    alphabet: Array.from(charSet),
+    mode,
+  };
+}
+
+/**
+ * Dynamic Regular Expression Recognizer Builder for Star Patterns like 01*0 or a*b
+ * Consistently replaces each input symbol with its dedicated marker (0 -> X, 1 -> Y).
+ */
+export function buildStarRegexMachine(pattern: string, customAlphabet?: string[]): TuringMachineDefinition {
+  const starMatch = pattern.match(/^([a-zA-Z0-9]*?)([a-zA-Z0-9])\*([a-zA-Z0-9]*)$/);
+  const prefix = starMatch ? starMatch[1] : '';
+  const starChar = starMatch ? starMatch[2] : (pattern.replace(/[*+]/g, '')[0] || '1');
+  const suffix = starMatch ? starMatch[3] : '';
+
+  const rawChars = pattern.replace(/[*+]/g, '').split('');
+  const charSet = new Set<string>(rawChars);
+  if (customAlphabet && customAlphabet.length > 0) {
+    customAlphabet.forEach((c) => charSet.add(c));
+  } else {
+    if (charSet.has('a') || charSet.has('b')) {
+      charSet.add('a');
+      charSet.add('b');
+    } else if (charSet.has('0') || charSet.has('1')) {
+      charSet.add('0');
+      charSet.add('1');
+    }
+  }
+
+  const inputAlphabet = Array.from(charSet);
+  const prefixMarker = prefix ? getConsistentWriteSymbol(prefix, inputAlphabet) : '';
+  const starMarker = getConsistentWriteSymbol(starChar, inputAlphabet);
+  const suffixMarker = suffix ? getConsistentWriteSymbol(suffix, inputAlphabet) : '';
+
+  const usedMarkers = Array.from(new Set(inputAlphabet.map((c) => getConsistentWriteSymbol(c, inputAlphabet))));
+  const tapeAlphabet = Array.from(new Set([...inputAlphabet, ...usedMarkers, 'B']));
+
+  const states = ['q0', 'q1', 'q2', 'q_accept', 'q_reject'];
+  const transitions: Transition[] = [];
+
+  // q0: Match prefix (e.g. '0') and write prefixMarker (e.g. 'X')
+  if (prefix) {
+    transitions.push({
+      currentState: 'q0',
+      readSymbol: prefix,
+      writeSymbol: prefixMarker,
+      moveDirection: 'R',
+      nextState: 'q1',
+      phaseName: 'PREFIX',
+      description: `Matched starting prefix '${prefix}'. Rewrote cell as '${prefixMarker}' and moved to state q1.`,
+    });
+    for (const sym of tapeAlphabet) {
+      if (sym !== prefix) {
+        transitions.push({
+          currentState: 'q0',
+          readSymbol: sym,
+          writeSymbol: sym,
+          moveDirection: 'R',
+          nextState: 'q_reject',
+          phaseName: 'REJECT',
+          description: `Expected initial '${prefix}', but read '${sym}'. Reject.`,
+        });
+      }
+    }
+  }
+
+  // q1: Loop on starChar (e.g. '1*') and write starMarker (e.g. 'Y')
+  transitions.push({
+    currentState: 'q1',
+    readSymbol: starChar,
+    writeSymbol: starMarker,
+    moveDirection: 'R',
+    nextState: 'q1',
+    phaseName: 'REPEAT',
+    description: `Matched '${starChar}' in (${starChar}*) repetition. Rewrote cell as '${starMarker}'.`,
+  });
+
+  // q1: On suffix (e.g. '0'), write suffixMarker (e.g. 'X') and advance to q2
+  if (suffix && suffix !== starChar) {
+    transitions.push({
+      currentState: 'q1',
+      readSymbol: suffix,
+      writeSymbol: suffixMarker,
+      moveDirection: 'R',
+      nextState: 'q2',
+      phaseName: 'SUFFIX',
+      description: `Matched closing '${suffix}'. Rewrote cell as '${suffixMarker}' and moved to state q2.`,
+    });
+
+    for (const sym of tapeAlphabet) {
+      if (sym !== starChar && sym !== suffix) {
+        transitions.push({
+          currentState: 'q1',
+          readSymbol: sym,
+          writeSymbol: sym,
+          moveDirection: 'R',
+          nextState: 'q_reject',
+          phaseName: 'REJECT',
+          description: `Expected '${starChar}' or ending '${suffix}', but read '${sym}'. Reject.`,
+        });
+      }
+    }
+  } else {
+    // If no suffix, q1 directly accepts on blank 'B'
+    transitions.push({
+      currentState: 'q1',
+      readSymbol: 'B',
+      writeSymbol: 'B',
+      moveDirection: 'R',
+      nextState: 'q_accept',
+      phaseName: 'ACCEPT',
+      description: `Reached trailing blank with valid repetition. ACCEPT ✓`,
+    });
+  }
+
+  // q2: Confirm string boundary after suffix
+  transitions.push({
+    currentState: 'q2',
+    readSymbol: 'B',
+    writeSymbol: 'B',
+    moveDirection: 'R',
+    nextState: 'q_accept',
+    phaseName: 'ACCEPT',
+    description: `Reached trailing blank after valid "${pattern}" match. ACCEPT ✓`,
+  });
+
+  for (const sym of inputAlphabet) {
+    transitions.push({
+      currentState: 'q2',
+      readSymbol: sym,
+      writeSymbol: sym,
+      moveDirection: 'R',
+      nextState: 'q_reject',
+      phaseName: 'REJECT',
+      description: `Extra symbol '${sym}' detected after final suffix. Reject.`,
+    });
+  }
+
+  const statePositions: Record<string, any> = {
+    q0: { x: 130, y: 115, label: 'q0', description: `Match '${prefix}' → ${prefixMarker}`, role: 'start', color: '#2563eb' },
+    q1: { x: 370, y: 115, label: 'q1', description: `Loop '${starChar}*' → ${starMarker}`, role: 'normal', color: '#7c3aed' },
+    q2: { x: 610, y: 115, label: 'q2', description: `Match '${suffix}' → ${suffixMarker}`, role: 'normal', color: '#0891b2' },
+    q_accept: { x: 830, y: 115, label: 'q_accept', description: 'Accept ✓', role: 'accept', color: '#16a34a' },
+    q_reject: { x: 490, y: 295, label: 'q_reject', description: 'Reject ✕', role: 'reject', color: '#dc2626' },
+  };
+
+  const edgeLayouts: Record<string, any> = {
+    'q0-->q1': { labelX: 250, labelY: 82, curveOffset: 0 },
+    'q1-->q1': { loopDirection: 'top' },
+    'q1-->q2': { labelX: 490, labelY: 82, curveOffset: 0 },
+    'q2-->q_accept': { labelX: 720, labelY: 82, curveOffset: 0 },
+  };
+
+  const sampleZero = `${prefix}${suffix}`;
+  const sampleOne = `${prefix}${starChar}${suffix}`;
+  const sampleTwo = `${prefix}${starChar}${starChar}${suffix}`;
+  const sampleThree = `${prefix}${starChar}${starChar}${starChar}${suffix}`;
+
+  const sampleZeroOut = `${prefixMarker}${suffixMarker}`;
+  const sampleOneOut = `${prefixMarker}${starMarker}${suffixMarker}`;
+  const sampleTwoOut = `${prefixMarker}${starMarker}${starMarker}${suffixMarker}`;
+
+  const presetInputs: PresetInput[] = [
+    { label: `${sampleZero} (0 ones → ${sampleZeroOut})`, value: sampleZero, expected: 'ACCEPT', note: 'Zero repetitions' },
+    { label: `${sampleOne} (1 one → ${sampleOneOut})`, value: sampleOne, expected: 'ACCEPT', note: 'Single repetition' },
+    { label: `${sampleTwo} (2 ones → ${sampleTwoOut})`, value: sampleTwo, expected: 'ACCEPT', note: 'Double repetition' },
+    { label: `${sampleThree} (3 ones)`, value: sampleThree, expected: 'ACCEPT', note: 'Multiple repetitions' },
+    { label: `${prefix} (Missing end)`, value: prefix, expected: 'REJECT', note: 'No ending suffix' },
+    { label: `${prefix}${starChar} (Missing end)`, value: `${prefix}${starChar}`, expected: 'REJECT', note: 'Ends in repetition char' },
+    { label: `${sampleOne}1 (Extra char)`, value: `${sampleOne}1`, expected: 'REJECT', note: 'Extra symbol after suffix' },
+  ];
+
+  return {
+    id: `regex-${pattern.replace(/[^a-zA-Z0-9]/g, '_')}-${Date.now()}`,
+    name: `Regex: ${pattern} (Tape: ${prefixMarker}, ${starMarker})`,
+    category: 'Basic',
+    description: `Turing Machine for Regular Language L = { ${pattern} } over Σ = { ${inputAlphabet.join(', ')} } consistently writing markers '${prefix}'→'${prefixMarker}', '${starChar}'→'${starMarker}'.`,
+    formalTitle: `Language Recognition: L = { ${pattern} }`,
+    language: `L = { ${pattern} }`,
+    states,
+    inputAlphabet,
+    tapeAlphabet,
+    initialState: 'q0',
+    blankSymbol: 'B',
+    acceptStates: ['q_accept'],
+    rejectStates: ['q_reject'],
+    transitions,
+    defaultInput: sampleOne,
+    presetInputs,
+    algorithmPhases: [
+      { id: 'PREFIX', label: `MARK PREFIX (${prefixMarker})`, description: `Verify initial symbol '${prefix}' and write marker '${prefixMarker}'`, states: ['q0'], color: '#2563eb' },
+      { id: 'REPEAT', label: `MARK REPETITION (${starMarker})`, description: `Process zero or more '${starChar}' characters and write marker '${starMarker}'`, states: ['q1'], color: '#7c3aed' },
+      { id: 'SUFFIX', label: `MARK SUFFIX (${suffixMarker})`, description: `Verify closing '${suffix}' symbol and write marker '${suffixMarker}'`, states: ['q2'], color: '#0891b2' },
+      { id: 'ACCEPT', label: 'ACCEPT', description: 'Confirm string ends at blank symbol', states: ['q_accept'], color: '#16a34a' },
+      { id: 'REJECT', label: 'REJECT', description: 'Invalid symbol or premature string termination', states: ['q_reject'], color: '#dc2626' },
+    ],
+    statePositions,
+    edgeLayouts,
+    explanationGuide: {
+      title: `Regular Language Recognition for ${pattern}`,
+      steps: [
+        { step: 1, title: `Mark Prefix with "${prefixMarker}"`, desc: `In state q0, verify starting symbol '${prefix}', write consistent marker '${prefixMarker}', and advance right.`, iconSymbol: prefixMarker || '→', color: '#2563eb' },
+        { step: 2, title: `Mark Repetitions with "${starMarker}"`, desc: `In state q1, replace each '${starChar}' with consistent marker '${starMarker}' in a self-loop.`, iconSymbol: starMarker, color: '#7c3aed' },
+        { step: 3, title: `Mark Suffix with "${suffixMarker}" & Accept`, desc: `Upon reading closing '${suffix}', write consistent marker '${suffixMarker}', enter state q2, verify trailing blank B, and accept.`, iconSymbol: suffixMarker || '✓', color: '#16a34a' },
+      ],
+    },
+  };
+}
+
+/**
+ * Dynamic Exact String Recognizer Builder: L = { target }
+ * Enforces consistent 1-to-1 write symbol per read symbol across the whole machine (e.g. all 'a' -> 'X', all 'b' -> 'Y').
+ */
+export function buildExactStringMachine(target: string, customAlphabet?: string[]): TuringMachineDefinition {
+  const chars = target.split('');
+  const charSet = new Set<string>(chars);
+  if (customAlphabet && customAlphabet.length > 0) {
+    customAlphabet.forEach((c) => charSet.add(c));
+  } else {
+    if (charSet.has('a') || charSet.has('b')) {
+      charSet.add('a');
+      charSet.add('b');
+    } else if (charSet.has('0') || charSet.has('1')) {
+      charSet.add('0');
+      charSet.add('1');
+    }
+  }
+
+  const inputAlphabet = Array.from(charSet);
+  const usedMarkers = Array.from(new Set(inputAlphabet.map((c) => getConsistentWriteSymbol(c, inputAlphabet))));
+  const tapeAlphabet = Array.from(new Set([...inputAlphabet, ...usedMarkers, 'B']));
+  const k = chars.length;
+
+  const states: string[] = [];
+  for (let i = 0; i <= k; i++) {
+    states.push(`q${i}`);
+  }
+  states.push('q_accept', 'q_reject');
+
+  const transitions: Transition[] = [];
+
+  for (let i = 0; i < k; i++) {
+    const expected = chars[i];
+    const writeMarker = getConsistentWriteSymbol(expected, inputAlphabet);
+    const currState = `q${i}`;
+    const nextState = `q${i + 1}`;
+
+    // On correct character -> advance and rewrite tape with consistent marker
+    transitions.push({
+      currentState: currState,
+      readSymbol: expected,
+      writeSymbol: writeMarker,
+      moveDirection: 'R',
+      nextState: nextState,
+      phaseName: 'MATCH',
+      description: `Matched '${expected}' at position ${i + 1}. Rewrote cell as '${writeMarker}' and moved to state ${nextState}.`,
+    });
+
+    // On any other symbol (including blank or wrong char) -> reject
+    for (const sym of tapeAlphabet) {
+      if (sym !== expected) {
+        transitions.push({
+          currentState: currState,
+          readSymbol: sym,
+          writeSymbol: sym,
+          moveDirection: 'R',
+          nextState: 'q_reject',
+          phaseName: 'REJECT',
+          description: `Expected '${expected}', but read '${sym}'. Reject.`,
+        });
+      }
+    }
+  }
+
+  // Final state qk: check for trailing blank
+  const endState = `q${k}`;
+  transitions.push({
+    currentState: endState,
+    readSymbol: 'B',
+    writeSymbol: 'B',
+    moveDirection: 'R',
+    nextState: 'q_accept',
+    phaseName: 'ACCEPT',
+    description: `Reached trailing blank after matching "${target}". ACCEPT ✓`,
+  });
+
+  for (const sym of inputAlphabet) {
+    transitions.push({
+      currentState: endState,
+      readSymbol: sym,
+      writeSymbol: sym,
+      moveDirection: 'R',
+      nextState: 'q_reject',
+      phaseName: 'REJECT',
+      description: `String contains extra trailing symbol '${sym}'. Reject.`,
+    });
+  }
+
+  // Layout node coordinates
+  const statePositions: Record<string, any> = {};
+  const spacing = Math.min(180, Math.max(120, Math.floor(700 / (k + 2))));
+  const startX = Math.max(80, Math.floor((900 - (k + 2) * spacing) / 2));
+
+  for (let i = 0; i <= k; i++) {
+    const symDesc = i < k ? `'${chars[i]}' → ${getConsistentWriteSymbol(chars[i], inputAlphabet)}` : 'Check Blank B';
+    statePositions[`q${i}`] = {
+      x: startX + i * spacing,
+      y: 115,
+      label: `q${i}`,
+      description: i === 0 ? `Start & read '${chars[0]}'` : symDesc,
+      role: i === 0 ? 'start' : 'normal',
+      color: i === 0 ? '#2563eb' : '#7c3aed',
+    };
+  }
+
+  statePositions['q_accept'] = {
+    x: startX + (k + 1) * spacing,
+    y: 115,
+    label: 'q_accept',
+    description: 'Accept ✓',
+    role: 'accept',
+    color: '#16a34a',
+  };
+
+  statePositions['q_reject'] = {
+    x: startX + Math.floor((k + 1) / 2) * spacing,
+    y: 295,
+    label: 'q_reject',
+    description: 'Reject ✕',
+    role: 'reject',
+    color: '#dc2626',
+  };
+
+  const edgeLayouts: Record<string, any> = {};
+  for (let i = 0; i < k; i++) {
+    edgeLayouts[`q${i}-->q${i + 1}`] = {
+      labelX: startX + i * spacing + spacing / 2,
+      labelY: 82,
+      curveOffset: 0,
+    };
+  }
+  edgeLayouts[`q${k}-->q_accept`] = {
+    labelX: startX + k * spacing + spacing / 2,
+    labelY: 82,
+    curveOffset: 0,
+  };
+
+  const outputPreview = chars.map((c) => getConsistentWriteSymbol(c, inputAlphabet)).join('');
+
+  const presetInputs: PresetInput[] = [
+    { label: `${target} (Exact → ${outputPreview})`, value: target, expected: 'ACCEPT', note: `Rewrites tape as ${outputPreview}` },
+  ];
+  if (k > 1) {
+    presetInputs.push({ label: `${target.slice(0, -1)} (Prefix only)`, value: target.slice(0, -1), expected: 'REJECT', note: 'Missing end character' });
+  }
+  const altChar = inputAlphabet.find((c) => c !== chars[0]) || 'b';
+  presetInputs.push(
+    { label: `${target}${chars[0]} (Extra char)`, value: `${target}${chars[0]}`, expected: 'REJECT', note: 'Too long' },
+    { label: `${altChar}${target.slice(1)} (Wrong start)`, value: `${altChar}${target.slice(1)}`, expected: 'REJECT', note: 'Incorrect 1st symbol' }
+  );
+
+  return {
+    id: `exact-${target}-${Date.now()}`,
+    name: `Exact: "${target}" (Tape: ${outputPreview})`,
+    category: 'Basic',
+    description: `Turing Machine to recognize language L = { "${target}" } over Σ = { ${inputAlphabet.join(', ')} }, consistently rewriting tape symbols (${inputAlphabet.map(c => `'${c}'→'${getConsistentWriteSymbol(c, inputAlphabet)}'`).join(', ')}).`,
+    formalTitle: `Language Recognition: L = { "${target}" }`,
+    language: `L = { "${target}" }`,
+    states,
+    inputAlphabet,
+    tapeAlphabet,
+    initialState: 'q0',
+    blankSymbol: 'B',
+    acceptStates: ['q_accept'],
+    rejectStates: ['q_reject'],
+    transitions,
+    defaultInput: target,
+    presetInputs,
+    algorithmPhases: [
+      { id: 'MATCH', label: 'MATCH STRING', description: `Verify each symbol of "${target}" and rewrite with consistent markers`, states: states.slice(0, k), color: '#2563eb' },
+      { id: 'ACCEPT', label: 'ACCEPT', description: 'Confirm end of string with blank symbol B', states: [`q${k}`, 'q_accept'], color: '#16a34a' },
+      { id: 'REJECT', label: 'REJECT', description: 'Symbol mismatch or improper string length', states: ['q_reject'], color: '#dc2626' },
+    ],
+    statePositions,
+    edgeLayouts,
+    explanationGuide: {
+      title: `Exact String Recognition for "${target}"`,
+      steps: [
+        { step: 1, title: 'Sequential Symbol Rewriting', desc: `Scan each tape cell and ensure it matches "${target}", rewriting each '${inputAlphabet[0]}' as '${getConsistentWriteSymbol(inputAlphabet[0], inputAlphabet)}' and '${inputAlphabet[1] || 'b'}' as '${getConsistentWriteSymbol(inputAlphabet[1] || 'b', inputAlphabet)}'.`, iconSymbol: '→', color: '#2563eb' },
+        { step: 2, title: 'Boundary Verification', desc: 'Ensure no extra symbols follow by checking for blank marker B immediately after the final character.', iconSymbol: 'B', color: '#7c3aed' },
+        { step: 3, title: 'Accept / Reject Decision', desc: 'Transition into q_accept if and only if the exact string matched; transition to q_reject otherwise.', iconSymbol: '✓', color: '#16a34a' },
+      ],
+    },
+  };
+}
+
+/**
+ * Dynamic Substring Machine Builder: L = { w | w contains target as substring }
+ */
+export function buildSubstringMachine(target: string, customAlphabet?: string[]): TuringMachineDefinition {
+  const chars = target.split('');
+  const charSet = new Set<string>(chars);
+  if (customAlphabet && customAlphabet.length > 0) {
+    customAlphabet.forEach((c) => charSet.add(c));
+  } else {
+    if (charSet.has('a') || charSet.has('b')) {
+      charSet.add('a');
+      charSet.add('b');
+    } else if (charSet.has('0') || charSet.has('1')) {
+      charSet.add('0');
+      charSet.add('1');
+    }
+  }
+
+  const inputAlphabet = Array.from(charSet);
+  const tapeAlphabet = Array.from(new Set([...inputAlphabet, 'B']));
+  const k = chars.length;
+
+  const states: string[] = [];
+  for (let i = 0; i <= k; i++) {
+    states.push(`q${i}`);
+  }
+  states.push('q_accept', 'q_reject');
+
+  const transitions: Transition[] = [];
+
+  for (let i = 0; i < k; i++) {
+    const currPrefix = target.slice(0, i);
+    const currState = `q${i}`;
+
+    transitions.push({
+      currentState: currState,
+      readSymbol: 'B',
+      writeSymbol: 'B',
+      moveDirection: 'R',
+      nextState: 'q_reject',
+      phaseName: 'REJECT',
+      description: `Reached end of tape without finding "${target}". Reject.`,
+    });
+
+    for (const sym of inputAlphabet) {
+      const candidate = currPrefix + sym;
+      let nextLen = 0;
+      for (let len = Math.min(k, candidate.length); len >= 1; len--) {
+        if (candidate.endsWith(target.slice(0, len))) {
+          nextLen = len;
+          break;
+        }
+      }
+
+      transitions.push({
+        currentState: currState,
+        readSymbol: sym,
+        writeSymbol: sym,
+        moveDirection: 'R',
+        nextState: `q${nextLen}`,
+        phaseName: nextLen === k ? 'MATCHED' : 'SCAN',
+        description: nextLen === k 
+          ? `Found complete substring "${target}"! Moving to matched state q${nextLen}.`
+          : `Reading '${sym}' (matched prefix length ${nextLen}). Advance right.`,
+      });
+    }
+  }
+
+  const matchedState = `q${k}`;
+  for (const sym of inputAlphabet) {
+    transitions.push({
+      currentState: matchedState,
+      readSymbol: sym,
+      writeSymbol: sym,
+      moveDirection: 'R',
+      nextState: matchedState,
+      phaseName: 'MATCHED',
+      description: `Substring "${target}" already found. Scanning past remaining '${sym}'.`,
+    });
+  }
+  transitions.push({
+    currentState: matchedState,
+    readSymbol: 'B',
+    writeSymbol: 'B',
+    moveDirection: 'R',
+    nextState: 'q_accept',
+    phaseName: 'ACCEPT',
+    description: `End of tape reached with confirmed substring "${target}". ACCEPT ✓`,
+  });
+
+  const spacing = Math.min(180, Math.max(120, Math.floor(700 / (k + 2))));
+  const startX = Math.max(80, Math.floor((900 - (k + 2) * spacing) / 2));
+
+  const statePositions: Record<string, any> = {};
+  for (let i = 0; i <= k; i++) {
+    statePositions[`q${i}`] = {
+      x: startX + i * spacing,
+      y: 115,
+      label: `q${i}`,
+      description: i === k ? 'Substring Matched' : `Matched ${i} char${i > 1 ? 's' : ''}`,
+      role: i === 0 ? 'start' : 'normal',
+      color: i === 0 ? '#2563eb' : i === k ? '#059669' : '#7c3aed',
+    };
+  }
+  statePositions['q_accept'] = {
+    x: startX + (k + 1) * spacing,
+    y: 115,
+    label: 'q_accept',
+    description: 'Accept ✓',
+    role: 'accept',
+    color: '#16a34a',
+  };
+  statePositions['q_reject'] = {
+    x: startX + Math.floor((k + 1) / 2) * spacing,
+    y: 295,
+    label: 'q_reject',
+    description: 'Reject ✕',
+    role: 'reject',
+    color: '#dc2626',
+  };
+
+  const presetInputs: PresetInput[] = [
+    { label: `${target} (Exact)`, value: target, expected: 'ACCEPT', note: 'Direct match' },
+    { label: `a${target}b (Embedded)`, value: `a${target}b`, expected: 'ACCEPT', note: 'Substring in middle' },
+    { label: `${target}${target} (Repeated)`, value: `${target}${target}`, expected: 'ACCEPT', note: 'Contains substring multiple times' },
+    { label: `bb (No match)`, value: 'bb', expected: 'REJECT', note: 'Does not contain substring' },
+  ];
+
+  return {
+    id: `substring-${target}-${Date.now()}`,
+    name: `Contains "${target}"`,
+    category: 'Basic',
+    description: `Turing Machine to accept all strings containing "${target}" as a substring over Σ = { ${inputAlphabet.join(', ')} }.`,
+    formalTitle: `Language Recognition: L = { w | w contains "${target}" }`,
+    language: `L = { w ∈ {${inputAlphabet.join(',')}}* | w contains "${target}" }`,
+    states,
+    inputAlphabet,
+    tapeAlphabet,
+    initialState: 'q0',
+    blankSymbol: 'B',
+    acceptStates: ['q_accept'],
+    rejectStates: ['q_reject'],
+    transitions,
+    defaultInput: `a${target}b`,
+    presetInputs,
+    algorithmPhases: [
+      { id: 'SCAN', label: 'SEARCH SUBSTRING', description: `Scan tape searching for consecutive sequence "${target}"`, states: states.slice(0, k), color: '#2563eb' },
+      { id: 'MATCHED', label: 'SUBSTRING FOUND', description: 'Advance past rest of tape once substring is found', states: [`q${k}`], color: '#059669' },
+      { id: 'ACCEPT', label: 'ACCEPT', description: 'Reach tape blank after finding substring', states: ['q_accept'], color: '#16a34a' },
+      { id: 'REJECT', label: 'REJECT', description: 'End of input without finding substring', states: ['q_reject'], color: '#dc2626' },
+    ],
+    statePositions,
+    explanationGuide: {
+      title: `Substring Recognition Algorithm for "${target}"`,
+      steps: [
+        { step: 1, title: 'State Prefix Tracking', desc: `States q0 to q${k-1} track the longest prefix of "${target}" matched so far in the input string.`, iconSymbol: '🔍', color: '#2563eb' },
+        { step: 2, title: 'KMP State Transitioning', desc: 'When characters mismatch, fallback to the longest matching overlap state rather than restarting at zero.', iconSymbol: '↩', color: '#7c3aed' },
+        { step: 3, title: 'Success State & Accept', desc: `Upon reaching state q${k}, the substring is guaranteed present. The TM sweeps to the end and accepts.`, iconSymbol: '✓', color: '#16a34a' },
+      ],
+    },
+  };
+}
+
+/**
  * Main Question Interpreter & Analyzer
  * Parses free-form mathematical shorthand and natural language requests.
  */
@@ -463,6 +1282,252 @@ export function analyzeQuestion(rawQuestion: string): InterpretationResult {
       testCases: [
         { input: '1', expected: 'ACCEPT' },
         { input: '111', expected: 'ACCEPT' },
+      ],
+    };
+  }
+
+  // Pattern: Unary to Binary Converter
+  if (
+    q.includes('unary to binary') ||
+    q.includes('unary-to-binary') ||
+    q.includes('unary 2 binary') ||
+    q.includes('convert unary to binary') ||
+    q.includes('unary to bin') ||
+    q.includes('base 1 to base 2') ||
+    q.includes('base 1 to 2') ||
+    q.includes('f(1^n) = bin(n)') ||
+    q.includes('f(1ⁿ) = bin(n)') ||
+    (q.includes('unary') && q.includes('binary') && !q.includes('addition') && !q.includes('subtraction'))
+  ) {
+    return {
+      isSupported: true,
+      confidence: 'high',
+      normalizedQuestion: 'Unary to Binary: f(1ⁿ) = bin(n)',
+      interpretationText: 'Construct a Turing Machine transducer that converts an arbitrary unary number (a string of n 1s) into its exact binary representation.',
+      matchedId: 'unaryToBinary',
+      buildMachine: () => ({ ...UNARY_TO_BINARY_MACHINE, id: 'u2b-generated' }),
+      testCases: [
+        { input: '1', expected: 'ACCEPT' },
+        { input: '11', expected: 'ACCEPT' },
+        { input: '111', expected: 'ACCEPT' },
+        { input: '11111', expected: 'ACCEPT' },
+      ],
+    };
+  }
+
+  // Pattern: Binary Decrement (w - 1)
+  if (
+    q.includes('decrement') ||
+    q.includes('w - 1') ||
+    q.includes('w-1') ||
+    q.includes('x - 1') ||
+    q.includes('x-1') ||
+    q.includes('subtract 1') ||
+    q.includes('subtract one') ||
+    q.includes('minus 1') ||
+    q.includes('minus one')
+  ) {
+    return {
+      isSupported: true,
+      confidence: 'high',
+      normalizedQuestion: 'Binary Decrement: f(w) = w - 1 (Base 2)',
+      interpretationText: 'Construct a Turing Machine transducer that subtracts 1 from a binary number using borrow propagation and leading-zero normalization.',
+      matchedId: 'binaryDecrement',
+      buildMachine: () => ({ ...BINARY_DECREMENT_MACHINE, id: 'bindec-generated' }),
+      testCases: [
+        { input: '10', expected: 'ACCEPT' },
+        { input: '100', expected: 'ACCEPT' },
+        { input: '111', expected: 'ACCEPT' },
+        { input: '1000', expected: 'ACCEPT' },
+      ],
+    };
+  }
+
+  // Pattern: 1's Complement
+  if (
+    q.includes("1's complement") ||
+    q.includes("1s complement") ||
+    q.includes("ones complement") ||
+    q.includes("one's complement") ||
+    q.includes("first complement") ||
+    (q.includes('1') && q.includes('complement') && !q.includes('2'))
+  ) {
+    return {
+      isSupported: true,
+      confidence: 'high',
+      normalizedQuestion: "1's Complement: f(w) = w̄ (Base 2)",
+      interpretationText: "Construct a Turing Machine transducer that computes the 1's complement of a binary string by inverting each bit (0 ↔ 1).",
+      matchedId: 'onesComplement',
+      buildMachine: buildOnesComplementMachine,
+      testCases: [
+        { input: '1011', expected: 'ACCEPT' },
+        { input: '1100', expected: 'ACCEPT' },
+        { input: '0', expected: 'ACCEPT' },
+      ],
+    };
+  }
+
+  // Pattern: 2's Complement
+  if (
+    q.includes("2's complement") ||
+    q.includes("2s complement") ||
+    q.includes("twos complement") ||
+    q.includes("two's complement") ||
+    q.includes("second complement") ||
+    (q.includes('2') && q.includes('complement'))
+  ) {
+    return {
+      isSupported: true,
+      confidence: 'high',
+      normalizedQuestion: "2's Complement: f(w) = -w (Base 2)",
+      interpretationText: "Construct a Turing Machine transducer that computes the 2's complement of a binary string (preserves trailing 0s and first 1, inverts remaining bits).",
+      matchedId: 'twosComplement',
+      buildMachine: buildTwosComplementMachine,
+      testCases: [
+        { input: '1100', expected: 'ACCEPT' },
+        { input: '1011', expected: 'ACCEPT' },
+        { input: '1010', expected: 'ACCEPT' },
+      ],
+    };
+  }
+
+  // Pattern: String Copy (w -> w#w or w -> ww)
+  if (
+    q.includes('string copy') ||
+    q.includes('copy string') ||
+    q.includes('duplicate string') ||
+    q.includes('w -> ww') ||
+    q.includes('w -> w w') ||
+    q.includes('w -> w#w') ||
+    q.includes('w # w') ||
+    q.includes('f(w) = ww') ||
+    q.includes('f(w) = w w') ||
+    q.includes('f(w) = w#w')
+  ) {
+    return {
+      isSupported: true,
+      confidence: 'high',
+      normalizedQuestion: 'String Duplication: f(w) = w # w',
+      interpretationText: 'Construct a Turing Machine transducer that duplicates an arbitrary binary input string onto the tape separated by delimiter "#".',
+      matchedId: 'stringCopy',
+      buildMachine: () => ({ ...STRING_COPY_MACHINE, id: 'stringcopy-generated' }),
+      testCases: [
+        { input: '01', expected: 'ACCEPT' },
+        { input: '101', expected: 'ACCEPT' },
+        { input: '11', expected: 'ACCEPT' },
+      ],
+    };
+  }
+
+  // Pattern: Binary Addition (A + B)
+  if (
+    q.includes('binary addition') ||
+    q.includes('add binary') ||
+    q.includes('addition of binary') ||
+    q.includes('addition of two') ||
+    q.includes('binary adder') ||
+    q.includes('a + b') ||
+    q.includes('a+b') ||
+    q.includes('a # b')
+  ) {
+    return {
+      isSupported: true,
+      confidence: 'high',
+      normalizedQuestion: 'Binary Addition: f(a # b) = a + b',
+      interpretationText: 'Construct a Turing Machine transducer that computes the binary sum of two numbers separated by delimiter "#".',
+      matchedId: 'binaryAddition',
+      buildMachine: () => ({ ...BINARY_ADDITION_MACHINE, id: 'binadd-generated' }),
+      testCases: [
+        { input: '10#11', expected: 'ACCEPT' },
+        { input: '11#01', expected: 'ACCEPT' },
+        { input: '0#1', expected: 'ACCEPT' },
+      ],
+    };
+  }
+
+  // Pattern: Binary Subtraction (A - B)
+  if (
+    q.includes('binary subtraction') ||
+    q.includes('subtract binary') ||
+    q.includes('subtraction of binary') ||
+    q.includes('subtraction of two') ||
+    q.includes('binary subtractor') ||
+    q.includes('a - b') ||
+    q.includes('a-b')
+  ) {
+    return {
+      isSupported: true,
+      confidence: 'high',
+      normalizedQuestion: 'Binary Subtraction: f(a # b) = a - b (for a ≥ b)',
+      interpretationText: 'Construct a Turing Machine transducer that computes binary subtraction A - B for non-negative result (A ≥ B).',
+      matchedId: 'binarySubtraction',
+      buildMachine: () => ({ ...BINARY_SUBTRACTION_MACHINE, id: 'binsub-generated' }),
+      testCases: [
+        { input: '11#01', expected: 'ACCEPT' },
+        { input: '100#01', expected: 'ACCEPT' },
+        { input: '01#10', expected: 'REJECT' },
+      ],
+    };
+  }
+
+  // Pattern: Dynamic string, regex, substring, prefix or suffix recognition
+  const extracted = extractTargetString(rawQuestion);
+  if (extracted && extracted.target.length >= 1) {
+    const { target, alphabet, mode } = extracted;
+
+    // Regular Expression with Kleene star (e.g. '01*0', 'a*b', '0*1')
+    if (target.includes('*')) {
+      const starMatch = target.match(/^([a-zA-Z0-9]*?)([a-zA-Z0-9])\*([a-zA-Z0-9]*)$/);
+      const prefix = starMatch ? starMatch[1] : '';
+      const starChar = starMatch ? starMatch[2] : '1';
+      const suffix = starMatch ? starMatch[3] : '';
+
+      return {
+        isSupported: true,
+        confidence: 'high',
+        normalizedQuestion: `L = { ${target} } over Σ = { ${alphabet.join(', ')} }`,
+        interpretationText: `Construct a Turing Machine that recognizes the regular language L = { ${target} } (starts with '${prefix || 'ε'}', followed by zero or more '${starChar}'s, ending with '${suffix || 'ε'}') over Σ = { ${alphabet.join(', ')} }.`,
+        matchedId: `regex_${target.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        buildMachine: () => buildStarRegexMachine(target, alphabet),
+        testCases: [
+          { input: `${prefix}${suffix}`, expected: 'ACCEPT' },
+          { input: `${prefix}${starChar}${suffix}`, expected: 'ACCEPT' },
+          { input: `${prefix}${starChar}${starChar}${suffix}`, expected: 'ACCEPT' },
+          { input: `${prefix}${starChar}`, expected: 'REJECT' },
+          { input: `${prefix}${starChar}${suffix}1`, expected: 'REJECT' },
+        ],
+      };
+    }
+
+    if (mode === 'contains') {
+      return {
+        isSupported: true,
+        confidence: 'high',
+        normalizedQuestion: `L = { w ∈ {${alphabet.join(',')}}* | w contains "${target}" }`,
+        interpretationText: `Construct a Turing Machine to accept strings containing the substring "${target}" over alphabet Σ = { ${alphabet.join(', ')} }.`,
+        matchedId: `substring_${target}`,
+        buildMachine: () => buildSubstringMachine(target, alphabet),
+        testCases: [
+          { input: target, expected: 'ACCEPT' },
+          { input: `a${target}b`, expected: 'ACCEPT' },
+          { input: `${target}${target}`, expected: 'ACCEPT' },
+          { input: 'bb', expected: target.includes('bb') ? 'ACCEPT' : 'REJECT' },
+        ],
+      };
+    }
+
+    // Default exact string match: L = { "target" }
+    return {
+      isSupported: true,
+      confidence: 'high',
+      normalizedQuestion: `L = { "${target}" } over Σ = { ${alphabet.join(', ')} }`,
+      interpretationText: `Construct a Turing Machine that accepts only the exact string "${target}" over alphabet Σ = { ${alphabet.join(', ')} }.`,
+      matchedId: `exact_${target}`,
+      buildMachine: () => buildExactStringMachine(target, alphabet),
+      testCases: [
+        { input: target, expected: 'ACCEPT' },
+        { input: `${target}a`, expected: 'REJECT' },
+        { input: `${target}b`, expected: 'REJECT' },
       ],
     };
   }
